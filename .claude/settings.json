@@ -66,7 +66,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'Context compaction triggered. Key context: Check CLAUDE.md for project rules, .claude/docs/DESIGN.md for design decisions, .claude/rules/ for coding standards.'"
+            "command": "echo '{\"hookSpecificOutput\": {\"additionalContext\": \"Context compaction triggered. Key context: Check CLAUDE.md for project rules, .claude/docs/DESIGN.md for design decisions, .claude/rules/ for coding standards.\"}}'"
           }
         ]
       }
@@ -124,15 +124,12 @@
       "Read(*)",
       "Edit(*)",
       "Write(*)",
-      "MultiEdit(*)",
       "Glob(*)",
       "Grep(*)",
-      "LS(*)",
       "WebFetch(*)",
       "WebSearch(*)",
       "Task(*)",
       "Skill(*)",
-      "TodoRead(*)",
       "TodoWrite(*)",
       "Bash(cat:*)",
       "Bash(ls:*)",
@@ -157,8 +154,8 @@
       "Bash(python3:*)",
       "Bash(uv:*)",
       "Bash(ruff:*)",
-      "Bash(black:*)",
-      "Bash(mypy:*)",
+      "Bash(ty:*)",
+      "Bash(poe:*)",
       "Bash(pytest:*)",
       "Bash(node:*)",
       "Bash(npm:*)",

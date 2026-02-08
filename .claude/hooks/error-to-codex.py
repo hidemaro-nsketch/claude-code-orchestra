@@ -101,8 +101,9 @@ def main() -> None:
             sys.exit(0)
 
         tool_input = data.get("tool_input", {})
-        tool_output = data.get("tool_output", "")
+        tool_response = data.get("tool_response", {})
         command = tool_input.get("command", "")
+        tool_output = tool_response.get("stdout", "") or tool_response.get("content", "")
 
         if not command or not tool_output:
             sys.exit(0)

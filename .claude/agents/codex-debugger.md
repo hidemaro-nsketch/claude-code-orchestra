@@ -30,7 +30,7 @@ Before calling Codex, gather relevant context:
 ### Step 2: Call Codex CLI
 
 ```bash
-codex exec --model gpt-5.2-codex --sandbox read-only --full-auto "
+codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "
 Analyze this error and provide root cause + fix:
 
 ## Error Output
