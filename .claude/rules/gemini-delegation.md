@@ -2,18 +2,15 @@
 
 **Gemini CLI is your external information and multimodal specialist.**
 
-## Role Change (Opus 4.6)
+## Role Division
 
-> **重要**: Claude 自身が 1M トークンのコンテキストを持つため、コードベース分析は Claude が直接行う。
-> Gemini の役割は「外部情報の取得」と「マルチモーダル処理」に特化した。
-
-| Task | Before (Opus 4.5) | After (Opus 4.6) |
-|------|-------------------|-------------------|
-| コードベース分析 | Gemini | **Claude 直接** |
-| ライブラリ調査 | Gemini | Gemini (外部Web検索) |
-| 最新ドキュメント検索 | Gemini | Gemini (Google Search) |
-| マルチモーダル | Gemini | Gemini (変更なし) |
-| 設計判断 | Codex | Codex (変更なし) |
+| Task | Agent |
+|------|-------|
+| コードベース分析 | **Claude 直接**（1M コンテキスト） |
+| ライブラリ調査 | Gemini（外部Web検索） |
+| 最新ドキュメント検索 | Gemini（Google Search） |
+| マルチモーダル | Gemini |
+| 設計判断 | Codex |
 
 ## Context Management
 
@@ -32,7 +29,7 @@ Gemini CLI excels at:
 - **Web research** — Library comparison, best practices, API specs
 
 **Gemini does NOT excel at** (use Claude/Codex instead):
-- Codebase analysis (Claude has 1M context now)
+- Codebase analysis (Claude handles directly)
 - Design decisions (Codex)
 - Debugging (Codex)
 - Code implementation (Claude)
@@ -103,8 +100,6 @@ gemini -p "{prompt}" < /path/to/file.pdf 2>/dev/null
 # JSON output
 gemini -p "{question}" --output-format json 2>/dev/null
 ```
-
-**Note**: `--include-directories .` is no longer needed for codebase analysis — Claude handles this directly.
 
 ## Language Protocol
 
