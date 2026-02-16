@@ -40,6 +40,17 @@ Claude Code Orchestra is a multi-agent collaboration framework that orchestrates
 | Skill Pipeline | `/startproject` → `/team-implement` → `/team-review` | Separation of concerns across skills |
 | Decision Journal | Consistent cross-phase decision logging | Local append-only canonical log + Linear mirror sync |
 
+### Execution Sizing (Adaptive)
+
+| Size | Typical Scope | Planning Mode | Implementation Mode | Review Mode |
+|------|---------------|---------------|---------------------|-------------|
+| XS | 1 file, low-risk, no design decision | Skip teams and subagents | Claude direct | Optional or spot-check |
+| S | 1-3 files, clear requirement, known pattern | Skip Agent Teams | Claude direct | Single reviewer |
+| M | 4-10 files or moderate design/risk | Targeted subagent consultation | Claude direct or 1-2 implementers | 2 reviewers |
+| L | 10+ files, cross-cutting, new dependency, migration | Full Agent Teams (Researcher + Architect) | Full implementation team | Full 4-reviewer team |
+
+Classification is hybrid: file count + complexity + risk/novelty. Runtime escalation is allowed when scope grows.
+
 ### Libraries & Roles
 
 | Library | Role | Version | Notes |
@@ -61,6 +72,9 @@ Claude Code Orchestra is a multi-agent collaboration framework that orchestrates
 | Hybrid MADR + Y-statements template approach | MADR forces "considered options" for local docs; Y-statements are concise for Linear comments | Pure MADR everywhere, pure Y-statements everywhere | 2026-02-16 |
 | Markdown format over JSONL for decision log | Human-readable, git-friendly diffs, no tooling needed; JSONL mirror can be added later if machine-queryable logs needed | JSONL (Codex recommendation) | 2026-02-16 |
 | 5-6 Linear comments per feature lifecycle | Reduces API noise while maintaining visibility; each comment is a coherent phase summary | Per-event comments (noisy), no comments (invisible) | 2026-02-16 |
+| Adaptive execution tiers (XS/S/M/L) added | Reduce over-orchestration on small tasks while preserving depth for large work | Single heavyweight workflow for all tasks | 2026-02-16 |
+| Task sizing should use hybrid signals | File count alone misses complexity and risk | File-count-only classification | 2026-02-16 |
+| Runtime promotion (S→M→L) should be explicit | Prevent under-scoped execution when tasks expand during implementation | Static upfront classification only | 2026-02-16 |
 
 ## TODO
 
@@ -70,6 +84,9 @@ Claude Code Orchestra is a multi-agent collaboration framework that orchestrates
 - [ ] Update hooks for Agent Teams quality gates
 - [ ] Define decision log schema (`decision_id`, `workflow_run_id`, `phase`, `checkpoint`, `summary`, `rationale`, `sync_status`)
 - [ ] Implement Linear sync worker (batch on post-phase, retry failed entries)
+- [x] Implement task sizing heuristic (file count + complexity + risk score) → `.claude/rules/adaptive-execution.md`
+- [x] Define auto-escalation triggers and handoff checkpoints between XS/S/M/L → `.claude/rules/adaptive-execution.md`
+- [ ] Add telemetry: initial size vs final size, escalation rate, cycle time, defect rate
 
 ## Decision Logging Architecture
 
@@ -507,8 +524,8 @@ Append to `.claude/docs/decisions/log-{feature}.md`:
 
 ## Open Questions
 
-- [ ] Optimal team size for /team-implement (2-3 vs 4-5 teammates)?
-- [ ] Should /team-review be mandatory or optional?
+- [ ] Exact scoring threshold for XS vs S when risk is low but touching core files
+- [ ] Should M tasks default to Claude direct, or 1 implementer by default?
 - [ ] How to handle Compaction in long Agent Teams sessions?
 
 ## Changelog
@@ -516,5 +533,6 @@ Append to `.claude/docs/decisions/log-{feature}.md`:
 | Date | Changes |
 |------|---------|
 | 2026-02-16 | Full Decision Logging Architecture: 9-gap solutions, PRE/DECISION/POST pattern, local-first dual-write, per-feature decision directories, Linear sync templates (Japanese) |
+| 2026-02-16 | Added adaptive execution sizing model (XS/S/M/L), hybrid classification principle, and runtime escalation policy |
 | 2026-02-08 | Major redesign for Opus 4.6: 1M context, Agent Teams, skill pipeline |
 | | Initial |
