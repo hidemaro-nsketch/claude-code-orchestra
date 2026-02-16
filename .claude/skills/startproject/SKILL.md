@@ -87,6 +87,23 @@ Explore agent / Glob / Grep / Read を使い、以下を把握:
 4. **成功基準**: 完了の判断基準は？
 5. **最終デザイン**: どのような形にしたいですか？
 
+### Step 3b: Record Requirements Decisions
+
+要件定義で確定した意思決定をローカルログに記録する：
+
+`.claude/docs/decisions/log-{feature}.md` に DECISION エントリを追記:
+
+```markdown
+### [startproject] DECISION — {date}
+
+- **担当者**: ユーザー + Claude Lead
+- **概要**: {requirement_decision}
+- **理由**: {user_reasoning}
+- **ステータス**: 承認済み
+```
+
+要件ごとに1エントリ追記する。スコープの包含・除外、技術的制約、成功基準など、合意した主要な要件をすべて記録する。
+
 ### Step 4: Create Project Brief
 
 コードベース理解 + 要件を「プロジェクト概要書」にまとめる：
@@ -115,6 +132,23 @@ Explore agent / Glob / Grep / Read を使い、以下を把握:
 ```
 
 This brief is passed to Phase 2 teammates as shared context.
+
+### Step 4b: Save Project Brief
+
+プロジェクト概要書をファイルに保存する：
+
+1. `.claude/docs/decisions/brief-{feature}.md` にプロジェクト概要書の全内容を保存
+2. `.claude/docs/decisions/log-{feature}.md` に PRE エントリを追記:
+
+```markdown
+### [startproject] PRE — {date}
+
+- **担当者**: Claude Lead
+- **概要**: プロジェクト概要書を作成（{feature}）
+- **成果物**: `.claude/docs/decisions/brief-{feature}.md`
+```
+
+> ディレクトリ `.claude/docs/decisions/` が存在しない場合は作成する。
 
 ---
 
@@ -258,26 +292,47 @@ Add project context to CLAUDE.md for cross-session persistence:
 
 ### Step 4: Post Design Decisions to Linear
 
-計画確定後、設計方針を Linear タスクにコメントとして追加する：
+計画確定後、設計方針を Linear タスクにコメントとして追加する（日本語）：
 
 ```
 Linear MCP ツールで、Phase 1 で取得した Linear タスクIDに以下をコメント:
 
-## 設計方針 ({feature})
+## 計画完了: {feature}
 
-### アーキテクチャ
-- {Key architecture decisions from Architect}
+### 概要
+{feature}の計画フェーズが完了しました。コードベース分析、要件定義、設計検討を経て、実装計画を策定しました。
 
-### 技術選定
-- {Library choices and constraints from Researcher}
+### 要件定義の決定事項
+- {requirement_decision_1}: {rationale_1}
+- {requirement_decision_2}: {rationale_2}
+
+### 設計方針
+- アーキテクチャ: {architecture_decisions}
+- 技術選定: {library_choices}
+- パターン: {design_patterns}
 
 ### タスク分解
-- {Task count} タスクに分割
-- 推定ワークストリーム: {number of parallel streams}
+- {task_count}個のタスクに分割
+- 推定ワークストリーム: {stream_count}本
 
-### 参考ドキュメント
-- `.claude/docs/DESIGN.md`
+### 成果物
+- `.claude/docs/decisions/brief-{feature}.md`
+- `.claude/docs/decisions/log-{feature}.md`
+- `.claude/docs/DESIGN.md`（更新）
 - `.claude/docs/research/{feature}.md`
+
+### 次のステップ
+- `/team-implement` で並列実装を開始
+```
+
+同時に `.claude/docs/decisions/log-{feature}.md` に POST エントリを追記:
+
+```markdown
+### [startproject] POST — {date}
+
+- **担当者**: Claude Lead
+- **概要**: 計画フェーズ完了、{task_count}タスクに分割、Linear にコメント投稿済み
+- **成果物**: `.claude/docs/DESIGN.md`, `.claude/docs/research/{feature}.md`
 ```
 
 > **Routing**: `.claude/rules/tool-routing.md` に従い、Gemini サブエージェント経由で計画、Claude MCP で実行する。
@@ -325,6 +380,8 @@ Present the plan in Japanese:
 | `.claude/docs/libraries/{lib}.md` | Researcher | Library documentation |
 | `.claude/docs/DESIGN.md` | Architect | Architecture decisions |
 | `CLAUDE.md` (updated) | Lead | Cross-session project context |
+| `.claude/docs/decisions/brief-{feature}.md` | Lead | Project brief (persistent) |
+| `.claude/docs/decisions/log-{feature}.md` | Lead | Canonical decision log |
 | Task list (internal) | Lead | Implementation tracking |
 
 ---

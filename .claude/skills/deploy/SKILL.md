@@ -79,10 +79,10 @@ Step 1: GitHub MCP ツールで情報を取得
 
 Step 2: Linear MCP ツールで、Linear タスクIDに以下をコメント:
 
-## デプロイ: {feature}
+## デプロイ完了: {feature}
 
 ### ブランチ
-- [`feature/{feature-name}`]({branch URL on GitHub}) → pushed to origin
+- [`feature/{feature-name}`]({branch URL on GitHub}) → origin に push 済み
 
 ### コミット履歴
 - [{commit hash 1}]({commit URL 1}): {commit message 1}
@@ -90,15 +90,35 @@ Step 2: Linear MCP ツールで、Linear タスクIDに以下をコメント:
 ...
 
 ### レビュー結果サマリー
-- Security: {summary}
-- Quality: {summary}
-- Test Coverage: {summary}
+- セキュリティ: {summary}
+- コード品質: {summary}
+- テストカバレッジ: {summary}
 
 ### 次のステップ
 - PR 作成 / マージ待ち
 ```
 
 > **Routing**: `.claude/rules/tool-routing.md` に従い、GitHub MCP で情報取得、Linear MCP でコメント投稿。
+
+### Step 4b: Save Deploy Record Locally
+
+デプロイ情報をローカルログに記録する：
+
+`.claude/docs/decisions/log-{feature}.md` に POST エントリを追記:
+
+```markdown
+### [deploy] POST — {date}
+
+- **担当者**: Claude Lead（Gemini サブエージェント経由）
+- **概要**: フィーチャーブランチを origin に push、{original_branch} に復帰
+- **成果物**: ブランチ `feature/{feature-name}` on origin
+
+### デプロイ詳細
+- ブランチ: `feature/{feature-name}` → origin
+- コミット数: {commit_count}件
+- レビュー状況: Critical/High 発見事項は解決済み
+- Linear: コメント投稿済み
+```
 
 ---
 

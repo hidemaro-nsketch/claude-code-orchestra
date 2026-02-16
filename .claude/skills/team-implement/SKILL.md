@@ -68,6 +68,45 @@ Step 5: Integration & Verification
 
 > この記録は実装完了後のレビュー（`/team-review`）でも参照される。
 
+### Step 0b: Sync Design Decisions to Linear
+
+`/design-tracker` 完了後、設計決定を Linear タスクにコメントとして投稿する（日本語）：
+
+```
+Linear MCP ツールで、/startproject から引き継いだ Linear タスクIDに以下をコメント:
+
+## 設計記録: {feature}
+
+### アーキテクチャ
+- {architecture_decision_1}
+- {architecture_decision_2}
+
+### 技術選定
+| ライブラリ | 用途 | 選定理由 |
+|-----------|------|---------|
+| {library_1} | {role_1} | {rationale_1} |
+
+### 主要な設計判断
+| 判断 | 理由 | 代替案 | 日付 |
+|------|------|--------|------|
+| {decision_1} | {rationale_1} | {alternatives_1} | {date} |
+
+### 参照ドキュメント
+- `.claude/docs/DESIGN.md`
+```
+
+> **Routing**: `.claude/rules/tool-routing.md` に従い、Gemini サブエージェント経由で計画、Claude MCP で実行する。
+
+同時に `.claude/docs/decisions/log-{feature}.md` に PRE エントリを追記:
+
+```markdown
+### [team-implement] PRE — {date}
+
+- **担当者**: Claude Lead
+- **概要**: 実装フェーズ開始、設計決定を記録
+- **成果物**: `.claude/docs/DESIGN.md`（design-tracker により更新）
+```
+
 ---
 
 ## Step 1: Create Feature Branch
@@ -85,6 +124,22 @@ Step 2: feature ブランチを作成・チェックアウト
 > **Routing**: git 操作は `.claude/rules/tool-routing.md` に従い、Gemini サブエージェント経由で実行する。
 
 ブランチ名の `{feature-name}` は `/startproject` で指定された機能名をケバブケースに変換して使用する（例: `feature/user-authentication`）。
+
+### Step 1b: Record Branch Info
+
+ブランチ作成情報をローカルログに記録する：
+
+`.claude/docs/decisions/log-{feature}.md` に DECISION エントリを追記:
+
+```markdown
+### [team-implement] DECISION — {date}
+
+- **担当者**: Claude Lead（Gemini サブエージェント経由）
+- **概要**: フィーチャーブランチ `feature/{feature-name}` を `{base-branch}` から作成
+- **理由**: 標準フィーチャーブランチワークフロー
+- **ステータス**: 承認済み
+- **成果物**: ブランチ `feature/{feature-name}`
+```
 
 ---
 
@@ -216,6 +271,27 @@ Wait for all teammates to complete their tasks.
 - テスト実行（pytest）
 - 型チェック（ty）
 
+### Step 4b: Record Implementation Decisions
+
+Lead がモニタリング中に介入判断を行った場合、ローカルログに記録する：
+
+`.claude/docs/decisions/log-{feature}.md` に DECISION エントリを追記:
+
+```markdown
+### [team-implement] DECISION — {date}
+
+- **担当者**: Claude Lead
+- **概要**: {intervention_description}
+- **理由**: {intervention_rationale}
+- **ステータス**: 承認済み
+```
+
+以下の場合に記録する：
+- ファイル所有権の再配分
+- Teammate への再指示
+- 技術的問題の解決（特に Codex 相談を伴うもの）
+- 実装中のスコープ変更
+
 ---
 
 ## Step 5: Integration & Verification
@@ -251,6 +327,47 @@ poe all
 
 ### 次のステップ
 `/team-review` で並列レビューを実行してください
+```
+
+### Step 5b: Save Implementation Summary Locally
+
+実装完了サマリーをローカルに保存する：
+
+1. `.claude/docs/decisions/implementation-{feature}.md` に保存:
+
+```markdown
+## Implementation Summary: {feature}
+
+### Completed Tasks
+- [x] {task 1}
+- [x] {task 2}
+
+### Quality Checks
+- ruff: {pass/fail}
+- ty: {pass/fail}
+- pytest: {N} tests, {coverage}% coverage
+
+### Commits
+- {hash}: {message}
+
+### Key Decisions During Implementation
+- {decision 1}: {rationale}
+
+### Changed Files
+- {file list}
+
+### Date
+{date}
+```
+
+2. `.claude/docs/decisions/log-{feature}.md` に POST エントリを追記:
+
+```markdown
+### [team-implement] POST — {date}
+
+- **担当者**: Claude Lead
+- **概要**: 実装完了、{task_count}タスク完了、品質チェック全通過
+- **成果物**: `.claude/docs/decisions/implementation-{feature}.md`
 ```
 
 ### Post Completion to Linear
