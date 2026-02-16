@@ -33,7 +33,12 @@ Step 0: CLASSIFY (Claude Lead)
   タスクサイズを自動判定 (XS/S/M/L) → ワークフローを適応
     ↓
 Phase 1: UNDERSTAND (Claude Lead — 1M context)
-  Claude がコードベースを直接読み、ユーザーと対話して要件を理解
+  1-1. コードベースを直接読む
+  1-2. Linear タスクをリンク（取得 or 新規作成）
+  1-3. ユーザーと対話して要件を理解
+  1-4. [MUST] 要件決定をログに記録
+  1-5. プロジェクト概要書を作成
+  1-6. [MUST] 概要書をファイル保存 + ログに PRE エントリ追記
     ↓
 Phase 2: RESEARCH & DESIGN (tier-dependent)
   XS/S: スキップ
@@ -41,8 +46,26 @@ Phase 2: RESEARCH & DESIGN (tier-dependent)
   L: Agent Teams (Researcher ←→ Architect)
     ↓
 Phase 3: PLAN & APPROVE (Claude Lead + User)
-  調査と設計を統合し、計画を作成してユーザー承認
+  3-1. 調査と設計を統合
+  3-2. 実装計画を作成
+  3-3. CLAUDE.md を更新
+  3-4. [MUST] Linear に計画完了コメントを投稿 + ログに POST エントリ追記
+  3-5. ユーザーに計画を提示して承認を求める
 ```
+
+### 記録ステップの適用範囲（MUST）
+
+**以下の記録・投稿は全 tier で必須。スキップ不可。**
+
+| 記録アクション | 発生箇所 | S | M | L |
+|---------------|---------|:--:|:--:|:--:|
+| 要件決定をログに記録 | Phase 1 (1-4) | MUST | MUST | MUST |
+| 概要書をファイル保存 | Phase 1 (1-6) | MUST | MUST | MUST |
+| `log-{feature}.md` PRE エントリ | Phase 1 (1-6) | MUST | MUST | MUST |
+| Linear に計画完了コメント | Phase 3 (3-4) | MUST | MUST | MUST |
+| `log-{feature}.md` POST エントリ | Phase 3 (3-4) | MUST | MUST | MUST |
+
+> **Linear タスクIDが無い場合**: ユーザーに確認する。「Linear タスクIDが見つかりません。Linear への投稿をスキップしますか？それともタスクIDを指定しますか？」と質問し、指示に従う。**暗黙的なスキップは禁止。**
 
 ---
 
@@ -129,7 +152,9 @@ Explore agent / Glob / Grep / Read を使い、以下を把握:
 4. **成功基準**: 完了の判断基準は？
 5. **最終デザイン**: どのような形にしたいですか？
 
-### Step 3b: Record Requirements Decisions
+### Step 3-2: [MUST] 要件決定をログに記録
+
+**このサブステップは全 tier で必須。スキップ不可。**
 
 要件定義で確定した意思決定をローカルログに記録する：
 
@@ -175,7 +200,9 @@ Explore agent / Glob / Grep / Read を使い、以下を把握:
 
 This brief is passed to Phase 2 teammates as shared context.
 
-### Step 4b: Save Project Brief
+### Step 4-2: [MUST] 概要書をファイル保存 + ログに PRE エントリ追記
+
+**このサブステップは全 tier で必須。スキップ不可。**
 
 プロジェクト概要書をファイルに保存する：
 
@@ -365,7 +392,11 @@ Add project context to CLAUDE.md for cross-session persistence:
 - {Decision 2}: {rationale}
 ```
 
-### Step 4: Post Design Decisions to Linear
+### Step 4: [MUST] Linear に計画完了コメントを投稿 + ログに POST エントリ追記
+
+**このステップは全 tier で必須。スキップ不可。**
+
+> **Linear タスクIDが無い場合**: ユーザーに「Linear タスクIDが見つかりません。IDを指定しますか？スキップしますか？」と確認する。暗黙的にスキップしてはならない。
 
 計画確定後、設計方針を Linear タスクにコメントとして追加する（日本語）：
 
@@ -400,7 +431,7 @@ Linear MCP ツールで、Phase 1 で取得した Linear タスクIDに以下を
 - `/team-implement` で並列実装を開始
 ```
 
-同時に `.claude/docs/decisions/log-{feature}.md` に POST エントリを追記:
+**[MUST]** 同時に `.claude/docs/decisions/log-{feature}.md` に POST エントリを追記（スキップ不可）:
 
 ```markdown
 ### [startproject] POST — {date}
