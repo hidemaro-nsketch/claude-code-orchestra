@@ -30,7 +30,10 @@ Step 3: Synthesize Findings
   レビュー結果を統合、優先度付け
     ↓
 Step 4: Report to User
-  発見事項と推奨アクションを提示
+  発見事項 + simplify 対象を提示
+    ↓ ユーザー承認
+Step 5: Simplify (Optional)
+  承認された箇所をリファクタリング
 ```
 
 ---
@@ -135,6 +138,38 @@ Spawn reviewers:
 
    Save report to .claude/docs/research/review-tests-{feature}.md"
 
+4. **Simplify Reviewer**
+   Prompt: "You are a Simplify Reviewer for: {feature}.
+
+   Analyze all changed files for structural complexity that can be simplified
+   WITHOUT changing behavior (refactoring only).
+
+   Look for:
+   - Deep nesting (depth > 2) → early return candidates
+   - Long functions (> 20 lines) → extract function candidates
+   - Unclear naming → rename candidates
+   - Missing type hints → annotation candidates
+   - Magic numbers → constant extraction candidates
+   - Mutable patterns → immutable alternatives
+
+   Changed files: {list}
+
+   References:
+   - .claude/rules/coding-principles.md
+   - .claude/docs/libraries/ (preserve library constraints)
+
+   For each finding:
+   - File and line number
+   - Current code snippet (brief)
+   - Proposed refactoring (brief)
+   - Effort: Small / Medium / Large
+   - Risk: Low / Medium (behavior change risk)
+
+   IMPORTANT: Only include refactorings that preserve existing behavior.
+   Skip anything that would change functionality.
+
+   Save report to .claude/docs/research/review-simplify-{feature}.md"
+
 Wait for all reviewers to complete.
 ```
 
@@ -157,6 +192,7 @@ Read review reports:
 - `.claude/docs/research/review-security-{feature}.md`
 - `.claude/docs/research/review-quality-{feature}.md`
 - `.claude/docs/research/review-tests-{feature}.md`
+- `.claude/docs/research/review-simplify-{feature}.md`
 
 ### Prioritization
 
@@ -180,6 +216,7 @@ Read review reports:
 - セキュリティ: {N}件 (Critical: {n}, High: {n}, Medium: {n})
 - コード品質: {N}件 (High: {n}, Medium: {n}, Low: {n})
 - テストカバレッジ: {N}% (目標80%に対して {above/below})
+- Simplify: {N}件 (Small: {n}, Medium: {n}, Large: {n})
 
 ### Critical / High 発見事項
 
@@ -198,8 +235,18 @@ Read review reports:
 ### Medium / Low 発見事項
 {Brief list — details in review reports}
 
+### Simplify 対象
+Simplify Reviewer のレポートから、リファクタリング可能な箇所:
+
+| # | ファイル | 問題 | 改善内容 |
+|---|---------|------|----------|
+| 1 | `{file}:{line}` | {e.g., deep nesting} | {e.g., early return に変換} |
+| 2 | `{file}:{line}` | {e.g., long function} | {e.g., 関数抽出} |
+...
+
 ---
-修正を行いますか？
+1. Critical/High の修正を行いますか？
+2. Simplify 対象のリファクタリングを実行しますか？（番号で選択可）
 ```
 
 ### Cleanup
@@ -207,6 +254,54 @@ Read review reports:
 ```
 Clean up the team
 ```
+
+---
+
+## Step 5: Simplify (User-Approved)
+
+**ユーザーが承認した simplify 対象に対してリファクタリングを実行する。**
+
+> Step 4 でユーザーが simplify 対象を承認（番号指定 or 全承認）した場合のみ実行。
+
+### Workflow
+
+1. **承認された対象を確認** — ユーザーが選んだ番号 or "全部"
+2. **対象ファイルを読む** — 現在のコードを確認
+3. **ライブラリ制約チェック** — `.claude/docs/libraries/` を参照
+4. **リファクタリング実行** — simplify の原則に従う:
+   - Early return（深いネストの解消）
+   - Extract function（長い関数の分割）
+   - Clear naming（不明瞭な命名の修正）
+   - Type hints 追加
+5. **テスト実行** — 各変更後に `uv run pytest -v` で動作確認
+6. **結果報告** — 変更内容のサマリーをユーザーに提示
+
+### Simplify Principles (from /simplify)
+
+| 原則 | 基準 |
+|------|------|
+| Single Responsibility | 1 function = 1 thing |
+| Short Functions | 20行以下を目標 |
+| Shallow Nesting | depth ≤ 2、early return 活用 |
+| Clear Naming | コメント不要な明確さ |
+| Type Hints | 全関数に必須 |
+
+### Output
+
+```markdown
+## Simplify 完了
+
+### 変更内容
+| # | ファイル | 変更 | テスト |
+|---|---------|------|--------|
+| 1 | `{file}` | {what changed} | ✓ pass |
+| 2 | `{file}` | {what changed} | ✓ pass |
+
+### スキップ
+- {skipped items with reason, if any}
+```
+
+> **Note**: simplify は動作を変えないリファクタリングのみ。機能変更を伴う修正は Critical/High の修正ステップで対応する。
 
 ---
 
