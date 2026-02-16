@@ -259,7 +259,7 @@ Step 5: Simplify (Optional)
 
 ### `/deploy` — デプロイ
 
-feature ブランチを push し、元のブランチに戻ります。
+feature ブランチを push し、PR を作成して、元のブランチに戻ります。
 
 ```
 /deploy
@@ -268,8 +268,9 @@ feature ブランチを push し、元のブランチに戻ります。
 **ワークフロー:**
 1. **品質チェック確認** → ruff / pytest の最終確認
 2. **git push** → `feature/{name}` を origin に push
-3. **ブランチ復帰** → 元のブランチに checkout
-4. **Linear コメント** → ブランチURL・コミット履歴・レビューサマリーを投稿
+3. **PR 作成** → `gh pr create` で Pull Request を作成
+4. **ブランチ復帰** → 元のブランチに checkout
+5. **Linear コメント** → ブランチURL・コミット履歴・PR リンク・レビューサマリーを投稿
 
 ### `/design-tracker` — 設計決定追跡
 
@@ -324,6 +325,52 @@ uv run ruff check .
 - **技術ドキュメント**: 英語
 - **README等**: 日本語可
 
+
+## Migration Tool
+
+他のプロジェクトに Skills / Rules / Hooks を移植するための対話型 CLI ツール。
+
+```bash
+python scripts/migrate-skills.py
+```
+
+### フェーズ構成
+
+スキルとルールは依存関係に基づいて6つのフェーズに分割されている。必要なフェーズだけを選択して移植できる。
+
+| Phase | 名前 | 内容 | ファイル数 |
+|-------|------|------|-----------|
+| **0** | Foundation Rules | 基本ルール（言語・コーディング・テスト・セキュリティ）+ lint-on-save フック | 5 |
+| **1** | Standalone Skills | 外部 CLI 不要のスキル（plan, tdd, simplify, design-tracker, update-design）| 5 |
+| **2** | Documentation Skills | ライブラリ調査・ドキュメント管理スキル | 2 |
+| **3** | External CLI Integration | Codex CLI + Gemini CLI 連携（スキル・ルール・フック・エージェント定義）| 20+ |
+| **4** | Agent Teams | 並列ワークフロー（startproject, team-implement, team-review, deploy）| 5 |
+| **5** | Session Management | チェックポイント・プロジェクト初期化 | 3 |
+
+### 使い方
+
+```bash
+# 対話型モード（fzf でフェーズとターゲットを選択）
+python scripts/migrate-skills.py
+
+# プレビューのみ（ファイルを変更しない）
+python scripts/migrate-skills.py --dry-run
+
+# 非対話型（CI 等で使用）
+python scripts/migrate-skills.py --phase 0,1,2 --target /path/to/project
+
+# 既存ファイルを上書き
+python scripts/migrate-skills.py --force
+```
+
+### 動作内容
+
+- 選択したフェーズのファイルをターゲットにコピー
+- `.claude/settings.json` にフック・パーミッション・環境変数をマージ
+- `CLAUDE.md` にフェーズ対応のセクションを追加
+- `.claude/.migrated-phases` に移植済みフェーズを記録（重複防止）
+
+> fzf が必要（対話型モードの場合）。`--phase` / `--target` フラグで非対話型実行も可能。
 
 ## TODO
 
