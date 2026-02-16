@@ -28,8 +28,21 @@ Step 3: PR を作成（gh CLI 経由）
   ↓
 Step 4: 元のブランチに戻る
   ↓
-Step 5: Linear タスクにデプロイ情報をコメント
+Step 5: デプロイ情報を記録・投稿
+  5-1. [MUST] Linear タスクにデプロイ情報をコメント
+  5-2. [MUST] ローカルログに POST エントリ追記
 ```
+
+### 記録ステップの適用範囲（MUST）
+
+**以下の記録・投稿は必須。スキップ不可。**
+
+| 記録アクション | 発生箇所 |
+|---------------|---------|
+| Linear にデプロイ情報コメント | Step 5-1 |
+| `log-{feature}.md` POST エントリ | Step 5-2 |
+
+> **Linear タスクIDが無い場合**: ユーザーに確認する。「Linear タスクIDが見つかりません。IDを指定しますか？スキップしますか？」と質問し、指示に従う。**暗黙的なスキップは禁止。**
 
 ---
 
@@ -100,17 +113,23 @@ git checkout {original-branch}
 
 元のブランチ名が不明な場合はユーザーに確認する（通常は `main`）。
 
-## Step 5: Post Deploy Info to Linear
+## Step 5: デプロイ情報を記録・投稿
+
+### 5-1. [MUST] Linear タスクにデプロイ情報をコメント
+
+**このサブステップは必須。スキップ不可。**
+
+> **Linear タスクIDが無い場合**: ユーザーに「Linear タスクIDが見つかりません。IDを指定しますか？スキップしますか？」と確認する。暗黙的にスキップしてはならない。
 
 GitHub MCP でブランチ・コミット情報を取得し、Linear タスクにコメントとして追加する：
 
 ```
-Step 1: GitHub MCP ツールで情報を取得
+手順 1: GitHub MCP ツールで情報を取得
   - feature/{feature-name} ブランチの詳細（URL、保護状態）
   - コミット履歴（ハッシュ、メッセージ、URL）
   - push 先の確認
 
-Step 2: Linear MCP ツールで、Linear タスクIDに以下をコメント:
+手順 2: Linear MCP ツールで、Linear タスクIDに以下をコメント:
 
 ## デプロイ完了: {feature}
 
@@ -136,9 +155,9 @@ Step 2: Linear MCP ツールで、Linear タスクIDに以下をコメント:
 
 > **Routing**: `.claude/rules/tool-routing.md` に従い、GitHub MCP で情報取得、Linear MCP でコメント投稿。
 
-### Step 4b: Save Deploy Record Locally
+### 5-2. [MUST] ローカルログに POST エントリ追記
 
-デプロイ情報をローカルログに記録する：
+**このサブステップは必須。スキップ不可。**
 
 `.claude/docs/decisions/log-{feature}.md` に POST エントリを追記:
 
@@ -146,12 +165,13 @@ Step 2: Linear MCP ツールで、Linear タスクIDに以下をコメント:
 ### [deploy] POST — {date}
 
 - **担当者**: Claude Lead（Gemini サブエージェント経由）
-- **概要**: フィーチャーブランチを origin に push、{original_branch} に復帰
-- **成果物**: ブランチ `feature/{feature-name}` on origin
+- **概要**: フィーチャーブランチを origin に push、PR 作成、{original_branch} に復帰
+- **成果物**: ブランチ `feature/{feature-name}` on origin、PR {PR_URL}
 
 ### デプロイ詳細
 - ブランチ: `feature/{feature-name}` → origin
 - コミット数: {commit_count}件
+- PR: {PR_URL}
 - レビュー状況: Critical/High 発見事項は解決済み
 - Linear: コメント投稿済み
 ```
