@@ -46,7 +46,7 @@ ALWAYS consult Codex BEFORE:
 - Standard operations (git commit, running tests)
 - Tasks with clear, single solutions
 - Reading/searching files
-- **Codebase analysis** → Claude does this directly (1M context)
+- **Codebase analysis** → Gemini subagent handles this
 
 ## How to Consult
 

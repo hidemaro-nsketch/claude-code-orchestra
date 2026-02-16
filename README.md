@@ -10,12 +10,6 @@ Claude Code (Orchestrator) ─┬─ Codex CLI (Deep Reasoning)
 
 ## Quick Start
 
-既存プロジェクトのルートで実行:
-
-```bash
-git clone --depth 1 https://github.com/DeL-TaiseiOzaki/claude-code-orchestra.git .starter && cp -r .starter/.claude .starter/.codex .starter/.gemini .starter/CLAUDE.md . && rm -rf .starter && claude
-```
-
 ## Prerequisites
 
 ### Claude Code
@@ -42,36 +36,57 @@ gemini login
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│           Claude Code (Orchestrator)                        │
-│           → コンテキスト節約が最優先                         │
-│           → ユーザー対話・調整・実行を担当                   │
-│                      ↓                                      │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │              Subagent (general-purpose)               │  │
-│  │              → 独立したコンテキストを持つ               │  │
-│  │              → Codex/Gemini を呼び出し可能             │  │
-│  │              → 結果を要約してメインに返す              │  │
-│  │                                                       │  │
-│  │   ┌──────────────┐        ┌──────────────┐           │  │
-│  │   │  Codex CLI   │        │  Gemini CLI  │           │  │
-│  │   │  設計・推論  │        │  リサーチ    │           │  │
-│  │   │  デバッグ    │        │  マルチモーダル│          │  │
-│  │   └──────────────┘        └──────────────┘           │  │
-│  └───────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│           Claude Code (Orchestrator / 1M Context)            │
+│           → ユーザー対話・調整・実行を担当                    │
+│           → コードベース分析は Gemini サブエージェントに委託   │
+│           → Agent Teams で並列開発を管理                      │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │                   Agent Teams                          │  │
+│  │  /startproject   → Researcher + Architect 並列          │  │
+│  │  /team-implement → Implementer + Tester 並列           │  │
+│  │  /team-review    → Security + Quality + Test + Simplify │  │
+│  │  /deploy         → push + Linear更新                    │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │              Subagent (general-purpose)                 │  │
+│  │              → Tool Routing: git/lint/docker 等を委託   │  │
+│  │              → Codex/Gemini を呼び出し可能              │  │
+│  │              → 結果を要約してメインに返す               │  │
+│  │                                                        │  │
+│  │   ┌──────────────┐        ┌──────────────┐            │  │
+│  │   │  Codex CLI   │        │  Gemini CLI  │            │  │
+│  │   │  設計・推論  │        │  リサーチ    │            │  │
+│  │   │  デバッグ    │        │  マルチモーダル│           │  │
+│  │   └──────────────┘        └──────────────┘            │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │              MCP Integrations                          │  │
+│  │              → GitHub MCP (PR・Issue・コミット)         │  │
+│  │              → Linear MCP (タスク管理)                  │  │
+│  └────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### コンテキスト管理（重要）
+### Tool Routing
 
-メインオーケストレーターのコンテキストを節約するため、大きな出力が予想されるタスクはサブエージェント経由で実行します。
+Git / Docker / Lint 等の操作は Claude が直接実行せず、Gemini サブエージェント経由で実行する。
 
-| 状況 | 推奨方法 |
-|------|----------|
-| 大きな出力が予想される | サブエージェント経由 |
-| 短い質問・短い回答 | 直接呼び出しOK |
-| Codex/Gemini相談 | サブエージェント経由 |
-| 詳細な分析が必要 | サブエージェント経由 → ファイル保存 |
+| 操作 | ルーティング先 |
+|------|---------------|
+| git commit/push/merge 等 | Gemini サブエージェント |
+| ruff check/format | Gemini サブエージェント |
+| uv add/sync | Gemini サブエージェント |
+| docker build/run | Gemini サブエージェント |
+| GitHub/Linear MCP | Gemini が計画 → Claude MCP で実行 |
+| コードベース分析 | Gemini サブエージェント |
+| 設計判断 | Codex |
+| 外部リサーチ | Gemini |
+
+→ 詳細: `.claude/rules/tool-routing.md`
 
 ## Directory Structure
 
@@ -81,35 +96,58 @@ gemini login
 ├── README.md
 ├── pyproject.toml               # Python プロジェクト設定
 ├── uv.lock                      # 依存関係ロックファイル
+├── scripts/                     # ユーティリティスクリプト
 │
 ├── .claude/
-│   ├── agents/
+│   ├── settings.json            # Claude Code 設定
+│   ├── settings.local.json      # ローカル設定（gitignore）
+│   │
+│   ├── agents/                  # カスタムエージェント定義
 │   │   ├── general-purpose.md   # 汎用サブエージェント
 │   │   ├── codex-debugger.md    # エラー分析エージェント
 │   │   └── gemini-explore.md    # コードベース探索エージェント
 │   │
 │   ├── skills/                  # 再利用可能なワークフロー
-│   │   ├── startproject/        # プロジェクト開始
+│   │   ├── startproject/        # プロジェクト開始（Agent Teams）
+│   │   ├── team-implement/      # 並列実装（Agent Teams）
+│   │   ├── team-review/         # 並列レビュー（Agent Teams）
+│   │   ├── deploy/              # デプロイ（push + Linear更新）
 │   │   ├── plan/                # 実装計画作成
 │   │   ├── tdd/                 # テスト駆動開発
 │   │   ├── checkpointing/       # セッション永続化
 │   │   ├── codex-system/        # Codex CLI連携
 │   │   ├── gemini-system/       # Gemini CLI連携
-│   │   └── ...
+│   │   ├── simplify/            # コードリファクタリング
+│   │   ├── design-tracker/      # 設計決定追跡
+│   │   ├── research-lib/        # ライブラリ調査
+│   │   ├── update-design/       # 設計ドキュメント更新
+│   │   └── update-lib-docs/     # ライブラリドキュメント更新
 │   │
 │   ├── hooks/                   # 自動化フック
-│   │   ├── agent-router.py      # エージェントルーティング
-│   │   ├── lint-on-save.py      # 保存時自動lint
-│   │   └── ...
+│   │   ├── enforce-tool-routing.py  # ツールルーティング強制
+│   │   ├── agent-router.py          # エージェントルーティング提案
+│   │   ├── lint-on-save.py          # 保存時自動lint
+│   │   ├── check-codex-before-write.py  # 書き込み前Codex相談
+│   │   ├── check-codex-after-plan.py    # 計画後Codex相談
+│   │   ├── error-to-codex.py        # エラー時Codex分析
+│   │   ├── post-implementation-review.py  # 実装後レビュー
+│   │   ├── post-test-analysis.py    # テスト後分析
+│   │   ├── suggest-gemini-research.py   # Geminiリサーチ提案
+│   │   └── log-cli-tools.py         # CLI入出力ログ記録
 │   │
 │   ├── rules/                   # 開発ガイドライン
-│   │   ├── coding-principles.md
-│   │   ├── testing.md
-│   │   └── ...
+│   │   ├── tool-routing.md      # ツールルーティングルール
+│   │   ├── codex-delegation.md  # Codex委託ルール
+│   │   ├── gemini-delegation.md # Gemini委託ルール
+│   │   ├── coding-principles.md # コーディング原則
+│   │   ├── dev-environment.md   # 開発環境
+│   │   ├── testing.md           # テストガイドライン
+│   │   ├── security.md          # セキュリティルール
+│   │   └── language.md          # 言語ルール
 │   │
 │   ├── docs/
 │   │   ├── DESIGN.md            # 設計決定記録
-│   │   ├── research/            # Gemini調査結果
+│   │   ├── research/            # 調査結果・レビューレポート
 │   │   └── libraries/           # ライブラリ制約
 │   │
 │   └── logs/
@@ -117,11 +155,15 @@ gemini login
 │
 ├── .codex/                      # Codex CLI設定
 │   ├── AGENTS.md
-│   └── config.toml
+│   ├── config.toml
+│   └── skills/
+│       └── context-loader/      # コンテキストローダー
 │
 └── .gemini/                     # Gemini CLI設定
     ├── GEMINI.md
-    └── settings.json
+    ├── settings.json
+    └── skills/
+        └── context-loader/      # コンテキストローダー
 ```
 
 ## Workflow

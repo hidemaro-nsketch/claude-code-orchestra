@@ -6,7 +6,7 @@
 
 | Task | Agent |
 |------|-------|
-| コードベース分析 | **Claude 直接**（1M コンテキスト） |
+| コードベース分析 | **Gemini サブエージェント**（`gemini-explore` or `general-purpose`） |
 | ライブラリ調査 | Gemini（外部Web検索） |
 | 最新ドキュメント検索 | Gemini（Google Search） |
 | マルチモーダル | Gemini |
@@ -17,6 +17,7 @@
 | 状況 | 推奨方法 |
 |------|----------|
 | 短い質問・短い回答 | 直接呼び出しOK |
+| コードベース分析 | サブエージェント経由（`gemini-explore` 推奨） |
 | ライブラリ調査 | サブエージェント経由（出力が大きい場合） |
 | マルチモーダル処理 | サブエージェント経由 |
 | Agent Teams 内での調査 | Teammate が直接呼び出し |
@@ -24,12 +25,12 @@
 ## About Gemini
 
 Gemini CLI excels at:
+- **Codebase analysis** — Repository structure, architecture, cross-module analysis
 - **Google Search grounding** — Access latest information, official docs
 - **Multimodal processing** — Video, audio, PDF analysis
 - **Web research** — Library comparison, best practices, API specs
 
 **Gemini does NOT excel at** (use Claude/Codex instead):
-- Codebase analysis (Claude handles directly)
 - Design decisions (Codex)
 - Debugging (Codex)
 - Code implementation (Claude)
@@ -38,14 +39,16 @@ Gemini CLI excels at:
 
 ALWAYS consult Gemini for:
 
-1. **External information** - Latest docs, library updates, API specs
-2. **Library research** - Comparison, best practices, known issues
-3. **Multimodal tasks** - Video, audio, PDF content extraction
+1. **Codebase analysis** - Repository structure, architecture, cross-module dependencies
+2. **External information** - Latest docs, library updates, API specs
+3. **Library research** - Comparison, best practices, known issues
+4. **Multimodal tasks** - Video, audio, PDF content extraction
 
 ### Trigger Phrases (User Input)
 
 | Japanese | English |
 |----------|---------|
+| 「コードベースを理解して」「アーキテクチャ分析して」 | "Analyze the codebase" "Understand the architecture" |
 | 「調べて」「リサーチして」「調査して」 | "Research" "Investigate" "Look up" |
 | 「このPDF/動画/音声を見て」 | "Analyze this PDF/video/audio" |
 | 「最新のドキュメントを確認して」 | "Check the latest documentation" |
@@ -55,7 +58,6 @@ ALWAYS consult Gemini for:
 
 Skip Gemini for:
 
-- **コードベース分析** → Claude が 1M コンテキストで直接読む
 - Design decisions → Codex
 - Debugging → Codex
 - Code implementation → Claude
@@ -67,7 +69,23 @@ Skip Gemini for:
 
 Researcher Teammate が Gemini を直接呼び出し、Architect Teammate と双方向通信する。
 
-### Subagent Pattern (For standalone research)
+### Subagent Pattern: Codebase Analysis
+
+```
+Task tool parameters:
+- subagent_type: "gemini-explore"  (preferred for codebase analysis)
+- run_in_background: true
+- prompt: |
+    Analyze: {analysis target}
+
+    Use Gemini CLI with --include-directories to analyze the codebase:
+    gemini -p "{analysis question}" --include-directories . 2>/dev/null
+
+    Save full output to: .claude/docs/research/{topic}.md
+    Return CONCISE summary (key findings + architecture insights).
+```
+
+### Subagent Pattern: External Research
 
 ```
 Task tool parameters:

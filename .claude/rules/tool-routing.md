@@ -19,10 +19,54 @@ by providing cross-cutting routing decisions.
 | Environment setup / diagnostics | **Gemini subagent** | `uv sync`, version checks, etc. |
 | Shell script generation | **Gemini subagent** | Script creation + execution |
 | File organization | **Gemini subagent** | Bulk rename, directory restructure |
-| Codebase analysis | Claude direct | 1M context |
+| Codebase analysis | **Gemini subagent** | `gemini-explore` or `general-purpose` |
 | Design decisions | Codex | Subagent or Agent Teams |
 | External research | Gemini | Subagent or Agent Teams |
 | Multimodal | Gemini | Subagent |
+
+## Codebase Analysis via Gemini
+
+Codebase analysis should be routed through a Gemini subagent (preferably `gemini-explore`).
+
+### Scope
+
+- Repository-wide architecture analysis
+- Cross-module dependency understanding
+- Pattern discovery across the codebase
+- Data flow and impact analysis
+- Code structure overview
+
+### How to Route
+
+```
+Task tool parameters:
+- subagent_type: "gemini-explore"  (preferred)
+- run_in_background: true
+- prompt: |
+    Analyze the codebase: {description}
+
+    Use Gemini CLI with --include-directories to analyze:
+    gemini -p "{analysis question}" --include-directories . 2>/dev/null
+
+    Follow up with local tools (Grep/Read/Glob) for targeted inspection.
+
+    Save full output to: .claude/docs/research/{topic}.md
+    Return CONCISE summary.
+```
+
+### Triggers
+
+| User Input | Action |
+|------------|--------|
+| 「コードベースを理解して」「アーキテクチャ分析して」 | Route to Gemini subagent |
+| 「コード全体を見て」「横断的に分析して」 | Route to Gemini subagent |
+| 「依存関係を調べて」「影響範囲を分析して」 | Route to Gemini subagent |
+
+### Exceptions (Claude handles directly)
+
+- Reading a specific single file (Read tool)
+- Searching for a specific symbol/function (Grep/Glob tools)
+- Quick reference during implementation (targeted file reads)
 
 ## Git Operations via Gemini
 
