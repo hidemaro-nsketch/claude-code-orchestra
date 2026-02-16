@@ -1,7 +1,5 @@
 # claude-code-orchestra
 
-![Claude Code Orchestra](./summary.png)
-
 Multi-Agent AI Development Environment
 
 ```
