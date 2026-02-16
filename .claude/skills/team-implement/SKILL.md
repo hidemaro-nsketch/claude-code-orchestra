@@ -17,6 +17,7 @@ metadata:
 - `/startproject` が完了し、計画がユーザーに承認されていること
 - `.claude/docs/DESIGN.md` にアーキテクチャが記録されていること
 - タスクリストが作成されていること
+- `/startproject` Phase 1 で取得した **Linear タスクID** が引き継がれていること
 
 ## Workflow
 
@@ -33,6 +34,24 @@ Step 3: Monitor & Coordinate
 Step 4: Integration & Verification
   全タスク完了後、統合テスト実行
 ```
+
+---
+
+## Step 0: Create Feature Branch
+
+**作業開始前に feature ブランチを作成する。**
+
+```
+Step 1: 現在のブランチを記録（deploy 時に戻る先）
+  git branch --show-current → 保持しておく
+
+Step 2: feature ブランチを作成・チェックアウト
+  git checkout -b feature/{feature-name}
+```
+
+> **Routing**: git 操作は `.claude/rules/tool-routing.md` に従い、Gemini サブエージェント経由で実行する。
+
+ブランチ名の `{feature-name}` は `/startproject` で指定された機能名をケバブケースに変換して使用する（例: `feature/user-authentication`）。
 
 ---
 
@@ -200,6 +219,44 @@ poe all
 ### 次のステップ
 `/team-review` で並列レビューを実行してください
 ```
+
+### Post Completion to Linear
+
+実装完了後、Linear タスクに作業内容をコメントとして追加する：
+
+```
+Step 1: GitHub MCP ツールでコミット情報・変更ファイルを取得
+  - feature/{feature-name} ブランチのコミット履歴
+  - 各コミットのハッシュ、メッセージ、URL
+  - 変更ファイル一覧
+
+Step 2: Linear MCP ツールで、/startproject から引き継いだ Linear タスクIDに以下をコメント:
+
+## 実装完了: {feature}
+
+### コミット履歴
+- [{commit hash 1}]({commit URL 1}): {commit message 1}
+- [{commit hash 2}]({commit URL 2}): {commit message 2}
+...
+
+### 完了タスク
+- [x] {task 1}
+- [x] {task 2}
+...
+
+### 品質チェック結果
+- ruff: ✓ / ✗
+- ty: ✓ / ✗
+- pytest: {N} tests passed, coverage {N}%
+
+### 変更ファイル
+- {file list from GitHub MCP}
+
+### 次のステップ
+`/team-review` で並列レビュー予定
+```
+
+> **Routing**: `.claude/rules/tool-routing.md` に従い、GitHub MCP でコミット情報取得、Linear MCP でコメント投稿。
 
 ### Cleanup
 

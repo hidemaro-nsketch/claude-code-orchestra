@@ -65,7 +65,19 @@ Explore agent / Glob / Grep / Read を使い、以下を把握:
 - テスト構造
 ```
 
-### Step 2: Requirements Gathering
+### Step 2: Linear Task Linking
+
+ユーザーに Linear タスクの指定を求める（日本語で）：
+
+- 「対象の Linear タスク（ID または URL）を教えてください」
+- ユーザーがタスクIDを指定 → Linear MCP ツールでタスク詳細を取得
+- ユーザーが「新規作成」と回答 → Linear MCP ツールで新規 issue を作成
+
+取得/作成した Linear タスクIDは、以降のフェーズを通じて保持する。
+
+> **Routing**: Linear 操作は `.claude/rules/tool-routing.md` に従い、Gemini サブエージェント経由で計画、Claude MCP で実行する。
+
+### Step 3: Requirements Gathering
 
 ユーザーに質問して要件を明確化（日本語で）：
 
@@ -75,7 +87,7 @@ Explore agent / Glob / Grep / Read を使い、以下を把握:
 4. **成功基準**: 完了の判断基準は？
 5. **最終デザイン**: どのような形にしたいですか？
 
-### Step 3: Create Project Brief
+### Step 4: Create Project Brief
 
 コードベース理解 + 要件を「プロジェクト概要書」にまとめる：
 
@@ -244,7 +256,33 @@ Add project context to CLAUDE.md for cross-session persistence:
 - {Decision 2}: {rationale}
 ```
 
-### Step 4: Present to User
+### Step 4: Post Design Decisions to Linear
+
+計画確定後、設計方針を Linear タスクにコメントとして追加する：
+
+```
+Linear MCP ツールで、Phase 1 で取得した Linear タスクIDに以下をコメント:
+
+## 設計方針 ({feature})
+
+### アーキテクチャ
+- {Key architecture decisions from Architect}
+
+### 技術選定
+- {Library choices and constraints from Researcher}
+
+### タスク分解
+- {Task count} タスクに分割
+- 推定ワークストリーム: {number of parallel streams}
+
+### 参考ドキュメント
+- `.claude/docs/DESIGN.md`
+- `.claude/docs/research/{feature}.md`
+```
+
+> **Routing**: `.claude/rules/tool-routing.md` に従い、Gemini サブエージェント経由で計画、Claude MCP で実行する。
+
+### Step 5: Present to User
 
 Present the plan in Japanese:
 
