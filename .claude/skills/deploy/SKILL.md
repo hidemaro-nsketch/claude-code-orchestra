@@ -1,15 +1,15 @@
 ---
 name: deploy
 description: |
-  Push the feature branch to remote and switch back to the original branch.
-  Run after /team-review completes. Handles git push and branch cleanup.
+  Push the feature branch to remote, create a PR, and switch back to the original branch.
+  Run after /team-review completes. Handles git push, PR creation, and branch cleanup.
 metadata:
-  short-description: Push feature branch and return to original branch
+  short-description: Push feature branch, create PR, and return to original branch
 ---
 
 # Deploy
 
-**feature ブランチを push し、元のブランチに戻る。**
+**feature ブランチを push し、PR を作成して、元のブランチに戻る。**
 
 ## Prerequisites
 
@@ -24,9 +24,11 @@ Step 1: 品質チェック確認
   ↓
 Step 2: feature ブランチを push
   ↓
-Step 3: 元のブランチに戻る
+Step 3: PR を作成（gh CLI 経由）
   ↓
-Step 4: Linear タスクにデプロイ情報をコメント
+Step 4: 元のブランチに戻る
+  ↓
+Step 5: Linear タスクにデプロイ情報をコメント
 ```
 
 ---
@@ -58,7 +60,38 @@ git branch --show-current
 git push -u origin feature/{feature-name}
 ```
 
-## Step 3: Return to Original Branch
+## Step 3: Create Pull Request (gh CLI)
+
+> **重要**: PR 作成には `gh` CLI を使用する。GitHub MCP の `create_pull_request` は 404 エラーが発生する場合があるため、`gh pr create` を推奨する。
+
+```bash
+# origin/main とのコンフリクトがある場合はリベースで解消
+git fetch origin
+git rebase origin/main
+# コンフリクトがあれば手動解消 → git rebase --continue
+# リベース後は force push が必要
+git push --force-with-lease origin feature/{feature-name}
+
+# PR を作成
+gh pr create \
+  --base main \
+  --head feature/{feature-name} \
+  --title "feat({feature-name}): {short description}" \
+  --body "$(cat <<'EOF'
+## Summary
+- {変更内容のサマリー（3-5 bullet points）}
+
+## Test plan
+- [ ] {テスト項目}
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+```
+
+PR のタイトルとボディは、実装内容に応じて適切に記述する。
+
+## Step 4: Return to Original Branch
 
 ```bash
 # /team-implement Step 0 で記録した元のブランチに戻る
@@ -67,7 +100,7 @@ git checkout {original-branch}
 
 元のブランチ名が不明な場合はユーザーに確認する（通常は `main`）。
 
-## Step 4: Post Deploy Info to Linear
+## Step 5: Post Deploy Info to Linear
 
 GitHub MCP でブランチ・コミット情報を取得し、Linear タスクにコメントとして追加する：
 
@@ -94,8 +127,11 @@ Step 2: Linear MCP ツールで、Linear タスクIDに以下をコメント:
 - Quality: {summary}
 - Test Coverage: {summary}
 
+### PR
+- [{PR title}]({PR URL})
+
 ### 次のステップ
-- PR 作成 / マージ待ち
+- マージ待ち
 ```
 
 > **Routing**: `.claude/rules/tool-routing.md` に従い、GitHub MCP で情報取得、Linear MCP でコメント投稿。
@@ -108,12 +144,12 @@ Step 2: Linear MCP ツールで、Linear タスクIDに以下をコメント:
 ## デプロイ完了: {feature}
 
 - ブランチ: `feature/{feature-name}` → origin に push 済み
+- PR: {PR URL}
 - 現在のブランチ: `{original-branch}` に戻りました
 - Linear: コメント追加済み
 
 ### 次のステップ
-- PR を作成してマージしてください
-- 必要に応じて `gh pr create` を実行できます
+- PR をレビュー・マージしてください
 ```
 
 ---
@@ -121,5 +157,7 @@ Step 2: Linear MCP ツールで、Linear タスクIDに以下をコメント:
 ## Tips
 
 - すべての git 操作は Gemini サブエージェント経由で実行される
+- **PR 作成は `gh` CLI を使用する**（GitHub MCP の `create_pull_request` は不安定なため）
 - push 前に必ず品質チェックを確認する
+- origin/main とのコンフリクトがある場合はリベースで解消してから PR を作成する
 - 元のブランチに戻れない場合は `git checkout main` にフォールバック
