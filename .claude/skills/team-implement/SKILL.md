@@ -19,7 +19,24 @@ metadata:
 - タスクリストが作成されていること
 - `/startproject` Phase 1 で取得した **Linear タスクID** が引き継がれていること
 
-## Workflow
+## Adaptive Execution
+
+> 参照: `.claude/rules/adaptive-execution.md`
+
+タスクサイズに応じてワークフローを適応させる：
+
+| Tier | 実装方式 | チーム構成 |
+|------|---------|-----------|
+| **XS** | Claude 直接実装 | チームなし |
+| **S** | Claude 直接実装 | チームなし |
+| **M** | Claude 直接 or 1-2 Teammate | 小規模チーム（任意） |
+| **L** | フル Agent Teams | モジュール別 Teammate + Tester |
+
+**XS/S の場合**: Step 0 → Step 1 → Claude が直接実装 → Step 5 に進む（Step 2-4 をスキップ）。
+**M の場合**: Step 0 → Step 1 → Step 2 で判断（Claude 直接 or 小チーム）→ Step 5。
+**L の場合**: フルワークフロー（Step 0-5 すべて実行）。
+
+## Workflow (Full — Tier L)
 
 ```
 Step 0: Record Design Decisions
@@ -301,8 +318,9 @@ Clean up the team
 
 ## Tips
 
-- **Delegate mode**: Shift+Tab で Lead が実装を避ける
+- **Adaptive**: XS/S は Claude 直接実装、M は小チーム、L はフルチーム（`.claude/rules/adaptive-execution.md`）
+- **Delegate mode**: Shift+Tab で Lead が実装を避ける（Tier L のみ）
 - **タスク粒度**: Teammate あたり 5-6 タスクが最適
 - **ファイル競合回避**: モジュール単位の所有権分離が最重要
 - **Tester 分離**: Implementer とは別に Tester を立てるとTDD的に回る
-- **コスト意識**: 各 Teammate は独立した Claude インスタンス（トークン消費大）
+- **コスト意識**: 各 Teammate は独立した Claude インスタンス（トークン消費大）→ 小タスクにはチーム不要

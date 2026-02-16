@@ -39,6 +39,17 @@ Claude Code Orchestra is a multi-agent collaboration framework that orchestrates
 | Subagents | Isolated tasks returning results | Codex/Gemini consultation when teams not needed |
 | Skill Pipeline | `/startproject` → `/team-implement` → `/team-review` | Separation of concerns across skills |
 
+### Execution Sizing (Adaptive)
+
+| Size | Typical Scope | Planning Mode | Implementation Mode | Review Mode |
+|------|---------------|---------------|---------------------|-------------|
+| XS | 1 file, low-risk, no design decision | Skip teams and subagents | Claude direct | Optional or spot-check |
+| S | 1-3 files, clear requirement, known pattern | Skip Agent Teams | Claude direct | Single reviewer |
+| M | 4-10 files or moderate design/risk | Targeted subagent consultation | Claude direct or 1-2 implementers | 2 reviewers |
+| L | 10+ files, cross-cutting, new dependency, migration | Full Agent Teams (Researcher + Architect) | Full implementation team | Full 4-reviewer team |
+
+Classification is hybrid: file count + complexity + risk/novelty. Runtime escalation is allowed when scope grows.
+
 ### Libraries & Roles
 
 | Library | Role | Version | Notes |
@@ -56,6 +67,9 @@ Claude Code Orchestra is a multi-agent collaboration framework that orchestrates
 | Agent Teams for Research ↔ Design | Bidirectional communication enables iterative refinement | Sequential subagents (old approach) | 2026-02-08 |
 | Agent Teams for parallel implementation | Module-based ownership avoids file conflicts | Single-agent sequential implementation | 2026-02-08 |
 | Subagent threshold relaxed to ~50 lines | 1M context can absorb more direct output | Keep 10-line threshold | 2026-02-08 |
+| Adaptive execution tiers (XS/S/M/L) added | Reduce over-orchestration on small tasks while preserving depth for large work | Single heavyweight workflow for all tasks | 2026-02-16 |
+| Task sizing should use hybrid signals | File count alone misses complexity and risk | File-count-only classification | 2026-02-16 |
+| Runtime promotion (S→M→L) should be explicit | Prevent under-scoped execution when tasks expand during implementation | Static upfront classification only | 2026-02-16 |
 
 ## TODO
 
@@ -63,16 +77,20 @@ Claude Code Orchestra is a multi-agent collaboration framework that orchestrates
 - [ ] Test Agent Teams workflow end-to-end with a real project
 - [ ] Evaluate if gemini-explore agent should be removed or repurposed
 - [ ] Update hooks for Agent Teams quality gates
+- [x] Implement task sizing heuristic (file count + complexity + risk score) → `.claude/rules/adaptive-execution.md`
+- [x] Define auto-escalation triggers and handoff checkpoints between XS/S/M/L → `.claude/rules/adaptive-execution.md`
+- [ ] Add telemetry: initial size vs final size, escalation rate, cycle time, defect rate
 
 ## Open Questions
 
-- [ ] Optimal team size for /team-implement (2-3 vs 4-5 teammates)?
-- [ ] Should /team-review be mandatory or optional?
+- [ ] Exact scoring threshold for XS vs S when risk is low but touching core files
+- [ ] Should M tasks default to Claude direct, or 1 implementer by default?
 - [ ] How to handle Compaction in long Agent Teams sessions?
 
 ## Changelog
 
 | Date | Changes |
 |------|---------|
+| 2026-02-16 | Added adaptive execution sizing model (XS/S/M/L), hybrid classification principle, and runtime escalation policy |
 | 2026-02-08 | Major redesign for Opus 4.6: 1M context, Agent Teams, skill pipeline |
 | | Initial |

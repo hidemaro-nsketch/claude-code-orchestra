@@ -17,7 +17,25 @@ metadata:
 - 実装が完了していること（`/team-implement` 後、または手動実装後）
 - 全テストが通過していること
 
-## Workflow
+## Adaptive Execution
+
+> 参照: `.claude/rules/adaptive-execution.md`
+
+タスクサイズに応じてレビュー方式を適応させる：
+
+| Tier | レビュー方式 | レビュアー数 |
+|------|------------|------------|
+| **XS** | レビュー省略 | 0 |
+| **S** | Claude が直接レビュー（単一パス） | 0（チームなし） |
+| **M** | 2 レビュアー（Security + Quality） | 2 |
+| **L** | フル 4 レビュアー | 4（Security, Quality, Test, Simplify） |
+
+**XS の場合**: レビューをスキップ。
+**S の場合**: Claude Lead が変更差分を読み、セキュリティと品質を単一パスで確認。Step 2-3 をスキップし、直接 Step 4 で結果を報告。
+**M の場合**: Security Reviewer + Quality Reviewer の 2 名のみ起動。
+**L の場合**: フルワークフロー（4 レビュアー）。
+
+## Workflow (Full — Tier L)
 
 ```
 Step 1: Gather Diff
@@ -307,8 +325,9 @@ Clean up the team
 
 ## Tips
 
-- **レビュアーの専門分化**: 各レビュアーが異なる視点に集中することで漏れを防ぐ
+- **Adaptive**: XS はスキップ、S は Claude 直接、M は 2 名、L はフル 4 名（`.claude/rules/adaptive-execution.md`）
+- **レビュアーの専門分化**: 各レビュアーが異なる視点に集中することで漏れを防ぐ（Tier L）
 - **Codex 活用**: Quality Reviewer が複雑なロジックを Codex に分析させる
 - **レポート永続化**: `.claude/docs/research/` にレビュー結果を保存し、修正時の参照に
 - **競合仮説モード**: バグ調査時は adversarial review パターンが有効
-- **コスト注意**: 3レビュアー = 3x トークン消費。小規模変更にはサブエージェント経由のレビューで十分
+- **コスト意識**: 4 レビュアー = 4x トークン消費 → タスクサイズに合わせてレビュアー数を調整
