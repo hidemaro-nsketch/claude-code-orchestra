@@ -35,14 +35,29 @@ Gemini CLI excels at:
 - Debugging (Codex)
 - Code implementation (Claude)
 
+## Adaptive Execution
+
+> 参照: `.claude/rules/adaptive-execution.md`
+
+タスクサイズに応じて Gemini の利用を適応させる：
+
+| Tier | Gemini 利用 |
+|------|------------|
+| **XS** | 不要 |
+| **S** | 不要 |
+| **M** | 未知のライブラリ・外部 API が関わる場合**のみ** |
+| **L** | 標準（Researcher teammate or サブエージェント） |
+
+**重要**: 外部調査が不要なタスクでは Gemini を起動しない。内部リファクタリング、既知のパターン適用、設定変更などは Gemini 不要。
+
 ## When to Consult Gemini
 
-ALWAYS consult Gemini for:
+Consult Gemini when **external information is actually needed**:
 
-1. **Codebase analysis** - Repository structure, architecture, cross-module dependencies
-2. **External information** - Latest docs, library updates, API specs
-3. **Library research** - Comparison, best practices, known issues
-4. **Multimodal tasks** - Video, audio, PDF content extraction
+1. **External information** - Latest docs, library updates, API specs
+2. **Library research** - Comparison, best practices, known issues
+3. **Multimodal tasks** - Video, audio, PDF content extraction
+4. **Codebase analysis** - Repository-wide architecture (large scope only)
 
 ### Trigger Phrases (User Input)
 

@@ -29,15 +29,57 @@ metadata:
 ## Workflow
 
 ```
+Step 0: CLASSIFY (Claude Lead)
+  タスクサイズを自動判定 (XS/S/M/L) → ワークフローを適応
+    ↓
 Phase 1: UNDERSTAND (Claude Lead — 1M context)
   Claude がコードベースを直接読み、ユーザーと対話して要件を理解
     ↓
-Phase 2: RESEARCH & DESIGN (Agent Teams — 並列)
-  Researcher ←→ Architect が双方向通信しながら調査・設計
+Phase 2: RESEARCH & DESIGN (tier-dependent)
+  XS/S: スキップ
+  M: Codex サブエージェントのみ（設計相談）
+  L: Agent Teams (Researcher ←→ Architect)
     ↓
 Phase 3: PLAN & APPROVE (Claude Lead + User)
   調査と設計を統合し、計画を作成してユーザー承認
 ```
+
+---
+
+## Step 0: CLASSIFY (Claude Lead)
+
+**タスクサイズを判定し、ワークフローを適応させる。**
+
+> 参照: `.claude/rules/adaptive-execution.md`
+
+### Classification
+
+要件をヒアリングした後（または事前に明らかな場合）、以下を判定：
+
+```
+tier = max(file_tier, complexity_tier, risk_tier)
+```
+
+| Tier | Phase 2 | Gemini 調査 | Codex 設計 |
+|------|---------|------------|-----------|
+| **XS** | /startproject 自体不要 | 不要 | 不要 |
+| **S** | スキップ | 不要 | 不要 |
+| **M** | Codex サブエージェントのみ | 必要時のみ | サブエージェント |
+| **L** | Agent Teams (フル) | 標準 | Agent Teams |
+
+### Presentation
+
+判定結果をユーザーに提示する：
+
+```markdown
+**Task Size: {tier} ({label})**
+- Files: ~{N} ({range})
+- Complexity: {description}
+- Risk: {level}
+- External research: {needed/not needed}
+```
+
+ユーザーは判定を上書きできる。
 
 ---
 
@@ -152,14 +194,47 @@ This brief is passed to Phase 2 teammates as shared context.
 
 ---
 
-## Phase 2: RESEARCH & DESIGN (Agent Teams — Parallel)
+## Phase 2: RESEARCH & DESIGN (Tier-Dependent)
+
+**タスクサイズに応じて調査・設計の方法を適応させる。**
+
+> 参照: `.claude/rules/adaptive-execution.md`
+
+### Tier S: Skip Phase 2
+
+Phase 2 をスキップし、Phase 3 に直接進む。Claude Lead が Phase 1 の知識で計画を作成する。
+
+### Tier M: Codex Subagent Only
+
+Agent Teams は使用しない。Codex サブエージェントに設計相談する：
+
+```
+Task tool parameters:
+- subagent_type: "general-purpose"
+- prompt: |
+    Consult Codex about architecture for: {feature}
+
+    Project Brief:
+    {project brief from Phase 1}
+
+    codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "
+    {design question}
+    " 2>/dev/null
+
+    Update .claude/docs/DESIGN.md with key decisions.
+    Return CONCISE summary.
+```
+
+Gemini 外部調査は、未知のライブラリや外部 API が関わる場合**のみ**サブエージェントで実行する。
+
+### Tier L: Full Agent Teams
 
 **Agent Teams で Researcher と Architect を並列起動し、双方向通信させる。**
 
 > サブエージェントとの決定的な違い: Teammates は相互通信できる。
 > Researcher の発見が Architect の設計を変え、Architect の要求が新たな調査を生む。
 
-### Team Setup
+### Team Setup (Tier L Only)
 
 ```
 Create an agent team for project planning: {feature}
@@ -388,8 +463,9 @@ Present the plan in Japanese:
 
 ## Tips
 
+- **Step 0**: タスクサイズ (XS/S/M/L) を判定し、ワークフローを適応させる（`.claude/rules/adaptive-execution.md`）
 - **Phase 1**: Claude は 1M コンテキストでコードベースを直接読める。Gemini への委託は不要
-- **Phase 2**: Agent Teams の双方向通信により、調査と設計が相互に影響し合える
+- **Phase 2**: L のみ Agent Teams、M は Codex サブエージェントのみ、S はスキップ
 - **Phase 3**: 計画承認後、`/team-implement` で並列実装に進む
 - **Ctrl+T**: タスクリストの表示切り替え
 - **Shift+Up/Down**: チームメイト間の移動（Agent Teams 使用時）

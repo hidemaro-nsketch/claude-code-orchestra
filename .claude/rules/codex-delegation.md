@@ -20,9 +20,24 @@ Think of it as a trusted senior expert you can always consult.
 
 **When facing difficult decisions → Consult Codex.**
 
+## Adaptive Execution
+
+> 参照: `.claude/rules/adaptive-execution.md`
+
+タスクサイズに応じて Codex の利用を適応させる：
+
+| Tier | Codex 利用 |
+|------|-----------|
+| **XS** | 不要 — Claude が直接対応 |
+| **S** | 不要 — 明確なパターンの場合。デバッグで原因不明な場合のみ相談 |
+| **M** | サブエージェントで設計相談 |
+| **L** | Agent Teams (Architect) or サブエージェント |
+
+**重要**: タスクが XS/S の場合、Codex への相談はスキップしてよい。
+
 ## When to Consult Codex
 
-ALWAYS consult Codex BEFORE:
+Consult Codex for **M/L tier tasks** BEFORE:
 
 1. **Design decisions** - How to structure code, which pattern to use
 2. **Debugging** - If cause isn't obvious or first fix failed
