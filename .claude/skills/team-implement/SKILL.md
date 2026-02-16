@@ -22,22 +22,55 @@ metadata:
 ## Workflow
 
 ```
-Step 1: Analyze Plan & Design Team
+Step 0: Record Design Decisions
+  /design-tracker で設計決定を DESIGN.md に記録
+    ↓
+Step 1: Create Feature Branch
+  feature/{name} ブランチを作成
+    ↓
+Step 2: Analyze Plan & Design Team
   計画からタスク依存関係を分析し、チーム構成を決定
     ↓
-Step 2: Spawn Agent Team
+Step 3: Spawn Agent Team
   モジュール/レイヤー単位でTeammateを起動
     ↓
-Step 3: Monitor & Coordinate
+Step 4: Monitor & Coordinate
   Lead がモニタリング、統合、品質管理
     ↓
-Step 4: Integration & Verification
+Step 5: Integration & Verification
   全タスク完了後、統合テスト実行
 ```
 
 ---
 
-## Step 0: Create Feature Branch
+## Step 0: Record Design Decisions
+
+**実装開始前に `/design-tracker` を実行し、設計決定を DESIGN.md に記録・確認する。**
+
+これにより、`/startproject` で決定された設計方針が永続化され、実装中・実装後に意思決定の根拠を追跡できる。
+
+### Procedure
+
+1. `/design-tracker` スキルを実行する
+2. `.claude/docs/DESIGN.md` を読み、以下を確認・追記:
+   - `/startproject` Phase 2 (Architect) で決定されたアーキテクチャ
+   - ライブラリ選定とその理由
+   - 主要な設計判断（パターン、データフロー、モジュール構成）
+   - 未記録の意思決定があれば追記
+3. 実装前スナップショットとして Changelog にエントリを追加
+
+```markdown
+## Changelog
+- {date}: Pre-implementation snapshot for {feature}
+  - Architecture: {summary}
+  - Key decisions: {list}
+```
+
+> この記録は実装完了後のレビュー（`/team-review`）でも参照される。
+
+---
+
+## Step 1: Create Feature Branch
 
 **作業開始前に feature ブランチを作成する。**
 
@@ -55,7 +88,7 @@ Step 2: feature ブランチを作成・チェックアウト
 
 ---
 
-## Step 1: Analyze Plan & Design Team
+## Step 2: Analyze Plan & Design Team
 
 **タスクリストから並列化可能なワークストリームを特定する。**
 
@@ -96,7 +129,7 @@ Teammate 3: Shared infrastructure
 
 ---
 
-## Step 2: Spawn Agent Team
+## Step 3: Spawn Agent Team
 
 **計画に基づいてチームを起動する。**
 
@@ -155,7 +188,7 @@ Wait for all teammates to complete their tasks.
 
 ---
 
-## Step 3: Monitor & Coordinate
+## Step 4: Monitor & Coordinate
 
 **Lead は実装せず、モニタリングと統合に専念する。**
 
@@ -185,7 +218,7 @@ Wait for all teammates to complete their tasks.
 
 ---
 
-## Step 4: Integration & Verification
+## Step 5: Integration & Verification
 
 **全タスク完了後、統合検証を行う。**
 

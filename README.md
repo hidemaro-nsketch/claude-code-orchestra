@@ -33,6 +33,19 @@ npm install -g @google/gemini-cli
 gemini login
 ```
 
+## Workflow
+
+```
+/startproject <機能名>     計画: 理解 → 調査&設計 → ユーザー承認
+    ↓ 承認後
+/team-implement            実装: Agent Teams で並列実装
+    ↓ 完了後
+/team-review               レビュー: 4専門レビュアー並列 → simplify
+    ↓ 完了後
+/deploy                    デプロイ: push → Linear更新
+```
+
+
 ## Architecture
 
 ```
@@ -166,17 +179,6 @@ Git / Docker / Lint 等の操作は Claude が直接実行せず、Gemini サブ
         └── context-loader/      # コンテキストローダー
 ```
 
-## Workflow
-
-```
-/startproject <機能名>     計画: 理解 → 調査&設計 → ユーザー承認
-    ↓ 承認後
-/team-implement            実装: Agent Teams で並列実装
-    ↓ 完了後
-/team-review               レビュー: 4専門レビュアー並列 → simplify
-    ↓ 完了後
-/deploy                    デプロイ: push → Linear更新
-```
 
 ## Skills
 
@@ -194,60 +196,6 @@ Git / Docker / Lint 等の操作は Claude が直接実行せず、Gemini サブ
 3. **Codex** → 計画レビュー・リスク分析
 4. **Claude** → タスクリスト作成
 
-### `/plan` — 実装計画
-
-要件を具体的なステップに分解します。
-
-```
-/plan APIエンドポイントの追加
-```
-
-**出力:**
-- 実装ステップ（ファイル・変更内容・検証方法）
-- 依存関係・リスク
-- 検証基準
-
-### `/tdd` — テスト駆動開発
-
-Red-Green-Refactorサイクルで実装します。
-
-```
-/tdd ユーザー登録機能
-```
-
-**ワークフロー:**
-1. テストケース設計
-2. 失敗するテスト作成（Red）
-3. 最小限の実装（Green）
-4. リファクタリング（Refactor）
-
-### `/checkpointing` — セッション永続化
-
-セッションの状態を保存します。
-
-```bash
-/checkpointing              # 基本: 履歴ログ
-/checkpointing --full       # 完全: git履歴・ファイル変更含む
-/checkpointing --analyze    # 分析: 再利用可能なスキルパターン発見
-```
-
-### `/codex-system` — Codex CLI連携
-
-設計判断・デバッグ・トレードオフ分析に使用します。
-
-**トリガー例:**
-- 「どう設計すべき？」「どう実装する？」
-- 「なぜ動かない？」「エラーが出る」
-- 「どちらがいい？」「比較して」
-
-### `/gemini-system` — Gemini CLI連携
-
-リサーチ・大規模分析・マルチモーダル処理に使用します。
-
-**トリガー例:**
-- 「調べて」「リサーチして」
-- 「このPDF/動画を見て」
-- 「コードベース全体を理解して」
 
 ### `/team-implement` — 並列実装
 
@@ -317,10 +265,6 @@ feature ブランチを push し、元のブランチに戻ります。
 2. **git push** → `feature/{name}` を origin に push
 3. **ブランチ復帰** → 元のブランチに checkout
 4. **Linear コメント** → ブランチURL・コミット履歴・レビューサマリーを投稿
-
-### `/simplify` — コードリファクタリング
-
-コードを簡潔化・可読性向上させます。
 
 ### `/design-tracker` — 設計決定追跡
 
