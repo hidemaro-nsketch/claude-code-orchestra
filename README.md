@@ -126,6 +126,18 @@ gemini login
     └── settings.json
 ```
 
+## Workflow
+
+```
+/startproject <機能名>     計画: 理解 → 調査&設計 → ユーザー承認
+    ↓ 承認後
+/team-implement            実装: Agent Teams で並列実装
+    ↓ 完了後
+/team-review               レビュー: 4専門レビュアー並列 → simplify
+    ↓ 完了後
+/deploy                    デプロイ: push → Linear更新
+```
+
 ## Skills
 
 ### `/startproject` — プロジェクト開始
@@ -196,6 +208,75 @@ Red-Green-Refactorサイクルで実装します。
 - 「調べて」「リサーチして」
 - 「このPDF/動画を見て」
 - 「コードベース全体を理解して」
+
+### `/team-implement` — 並列実装
+
+Agent Teams でモジュール単位の並列実装を行います。
+
+```
+/team-implement
+```
+
+**ワークフロー:**
+1. **計画分析** → タスク依存関係からチーム構成を決定
+2. **feature ブランチ作成** → `feature/{name}` で作業開始
+3. **Agent Teams 起動** → モジュール別 Implementer + Tester を並列起動
+4. **モニタリング** → Lead が進捗管理・競合解決
+5. **統合検証** → ruff / ty / pytest で品質チェック
+6. **Linear コメント** → コミット履歴・品質結果を投稿
+
+### `/team-review` — 並列レビュー
+
+Agent Teams で4つの専門視点から同時にレビューします。
+
+```
+/team-review
+```
+
+**ワークフロー:**
+
+```
+Step 1: Gather Diff
+  git diff main...HEAD で変更範囲を特定
+    ↓
+Step 2: Spawn Review Team (4人並列)
+  ├── Security Reviewer   → 脆弱性・認証・入力検証
+  ├── Quality Reviewer    → コード品質・命名・パターン (Codex活用)
+  ├── Test Reviewer       → カバレッジ・テスト品質
+  └── Simplify Reviewer   → 構造的複雑性・リファクタリング候補
+    ↓
+Step 3: Synthesize Findings
+  4つのレポートを統合、優先度付け (Critical > High > Medium > Low)
+    ↓
+Step 4: Report to User
+  統合結果 + simplify 対象リストを提示
+    ↓ ユーザー承認
+Step 5: Simplify (Optional)
+  承認された箇所のリファクタリング実行 + テスト確認
+```
+
+**レビューレポート出力先:**
+
+| レビュアー | 出力ファイル |
+|-----------|-------------|
+| Security | `.claude/docs/research/review-security-{feature}.md` |
+| Quality | `.claude/docs/research/review-quality-{feature}.md` |
+| Test | `.claude/docs/research/review-tests-{feature}.md` |
+| Simplify | `.claude/docs/research/review-simplify-{feature}.md` |
+
+### `/deploy` — デプロイ
+
+feature ブランチを push し、元のブランチに戻ります。
+
+```
+/deploy
+```
+
+**ワークフロー:**
+1. **品質チェック確認** → ruff / pytest の最終確認
+2. **git push** → `feature/{name}` を origin に push
+3. **ブランチ復帰** → 元のブランチに checkout
+4. **Linear コメント** → ブランチURL・コミット履歴・レビューサマリーを投稿
 
 ### `/simplify` — コードリファクタリング
 
