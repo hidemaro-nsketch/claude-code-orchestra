@@ -8,6 +8,11 @@ Claude Code (Orchestrator) ─┬─ Codex CLI (Deep Reasoning)
                             └─ Subagents (Parallel Tasks)
 ```
 
+forked from https://github.com/DeL-TaiseiOzaki/claude-code-orchestra
+
+## reference 
+- https://github.com/obra/superpowers
+
 ## Quick Start
 
 ## Prerequisites
@@ -318,3 +323,13 @@ uv run ruff check .
 - **ユーザーへの応答**: 日本語
 - **技術ドキュメント**: 英語
 - **README等**: 日本語可
+
+
+## TODO
+
+- routing 
+https://github.com/musistudio/claude-code-router
+
+- use playwrite mcp for web development (e.g. testing, e2e testing, web scraping)
+
+- use git worktree for parallel development 
