@@ -91,7 +91,7 @@ Library docs: `.claude/docs/libraries/`
 
 - **Design/debug** → Codex (`/codex-system`)
 - **External research** → Gemini (`/gemini-system`)
-- **Codebase analysis** → Claude directly (1M context)
+- **Codebase analysis** → Gemini subagent (`gemini-explore`)
 
 ### Context Management
 
@@ -144,6 +144,7 @@ PHASES: dict[int, dict] = {
             ".claude/rules/coding-principles.md",
             ".claude/rules/testing.md",
             ".claude/rules/security.md",
+            ".claude/rules/dev-environment.md",
             ".claude/hooks/lint-on-save.py",
         ],
         "settings_hooks": [
@@ -198,6 +199,7 @@ PHASES: dict[int, dict] = {
             ".claude/hooks/check-codex-before-write.py",
             ".claude/hooks/check-codex-after-plan.py",
             ".claude/hooks/error-to-codex.py",
+            ".claude/hooks/enforce-tool-routing.py",
             ".claude/hooks/suggest-gemini-research.py",
             ".claude/hooks/log-cli-tools.py",
             ".claude/hooks/post-test-analysis.py",
@@ -223,6 +225,12 @@ PHASES: dict[int, dict] = {
                 "matcher": "Edit|Write",
                 "command": 'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/check-codex-before-write.py"',
                 "timeout": 10,
+            },
+            {
+                "event": "PreToolUse",
+                "matcher": "Bash",
+                "command": 'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-tool-routing.py"',
+                "timeout": 5,
             },
             {
                 "event": "PreToolUse",
@@ -432,11 +440,43 @@ def select_target_interactive() -> Path:
     except (subprocess.TimeoutExpired, FileNotFoundError):
         result = None
 
+    # Also try to discover worktrees where .git is a file.
+    try:
+        result_git_file = subprocess.run(
+            [
+                "find",
+                str(home),
+                "-maxdepth",
+                "5",
+                "-name",
+                ".git",
+                "-type",
+                "f",
+                "-not",
+                "-path",
+                "*/node_modules/*",
+                "-not",
+                "-path",
+                "*/.cache/*",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        result_git_file = None
+
     manual_entry = "[Enter path manually]"
     repos = [manual_entry]
 
     if result and result.stdout.strip():
         for line in result.stdout.strip().splitlines():
+            repo_path = line.strip().removesuffix("/.git")
+            if repo_path and repo_path != str(SOURCE_ROOT):
+                repos.append(repo_path)
+
+    if result_git_file and result_git_file.stdout.strip():
+        for line in result_git_file.stdout.strip().splitlines():
             repo_path = line.strip().removesuffix("/.git")
             if repo_path and repo_path != str(SOURCE_ROOT):
                 repos.append(repo_path)
@@ -459,8 +499,13 @@ def get_migrated_phases(target: Path) -> set[int]:
         return set()
     try:
         data = json.loads(marker.read_text())
-        return set(data.get("phases", []))
-    except (json.JSONDecodeError, KeyError):
+        if not isinstance(data, dict):
+            return set()
+        phases = data.get("phases", [])
+        if not isinstance(phases, list):
+            return set()
+        return set(phases)
+    except (json.JSONDecodeError, OSError, TypeError):
         return set()
 
 
@@ -576,6 +621,7 @@ def collect_operations(phases: list[int], target: Path, *, force: bool = False) 
         "settings_permissions": [],
         "settings_env": {},
         "claude_md": "",
+        "claude_md_phases": [],
     }
 
     for phase_num in phases:
@@ -626,6 +672,7 @@ def collect_operations(phases: list[int], target: Path, *, force: bool = False) 
 
     # Generate CLAUDE.md sections for current phases
     ops["claude_md"] = generate_claude_md_sections(set(phases))
+    ops["claude_md_phases"] = sorted(set(phases))
 
     return ops
 
@@ -754,8 +801,19 @@ def execute_operations(ops: dict, target: Path) -> dict:
         try:
             claude_md_path = target / "CLAUDE.md"
             if claude_md_path.exists():
-                with claude_md_path.open("a") as f:
-                    f.write("\n" + ops["claude_md"])
+                existing_text = claude_md_path.read_text()
+                snippets_to_add: list[str] = []
+                for phase_num in ops.get("claude_md_phases", []):
+                    snippet = CLAUDE_MD_SNIPPETS.get(phase_num)
+                    if not snippet:
+                        continue
+                    if snippet.strip() in existing_text:
+                        continue
+                    snippets_to_add.append(snippet)
+
+                if snippets_to_add:
+                    with claude_md_path.open("a") as f:
+                        f.write("\n" + "\n".join(snippets_to_add))
             else:
                 header = generate_claude_md_header(target.name)
                 claude_md_path.write_text(header + "\n" + ops["claude_md"])
@@ -844,7 +902,7 @@ def main() -> int:
     # Phase selection
     if args.phase is not None:
         try:
-            phases = sorted(int(p.strip()) for p in args.phase.split(","))
+            phases = sorted({int(p.strip()) for p in args.phase.split(",") if p.strip()})
         except ValueError:
             print("Error: --phase must be comma-separated integers (e.g. '0,1,2')")
             return 1
@@ -918,7 +976,10 @@ def main() -> int:
     # Execute
     print("\nMigrating...")
     counts = execute_operations(ops, target)
-    record_migrated_phases(target, phases)
+    if counts["errors"] == 0:
+        record_migrated_phases(target, phases)
+    else:
+        print("  Warning: Migration had errors; not recording migrated phases marker.")
     print_summary(counts, phases, target)
 
     return 1 if counts["errors"] else 0
