@@ -32,30 +32,54 @@ metadata:
 | **M** | Claude 直接 or 1-2 Teammate | 小規模チーム（任意） |
 | **L** | フル Agent Teams | モジュール別 Teammate + Tester |
 
-**XS/S の場合**: Step 0 → Step 1 → Claude が直接実装 → Step 5 に進む（Step 2-4 をスキップ）。
-**M の場合**: Step 0 → Step 1 → Step 2 で判断（Claude 直接 or 小チーム）→ Step 5。
-**L の場合**: フルワークフロー（Step 0-5 すべて実行）。
+**XS/S の場合**: Step 0（設計記録 + Linear投稿）→ Step 1（ブランチ作成 + ログ記録）→ Claude が直接実装 → Step 5（検証 + サマリー保存 + Linear投稿）。Step 2-4 をスキップ。
+**M の場合**: Step 0（設計記録 + Linear投稿）→ Step 1 → Step 2 で判断（Claude 直接 or 小チーム）→ Step 5（検証 + サマリー保存 + Linear投稿）。
+**L の場合**: フルワークフロー（Step 0-5 すべて実行。各ステップの記録・投稿を含む）。
+
+### 記録ステップの適用範囲（MUST）
+
+**以下の記録・投稿は全 tier で必須。スキップ不可。**
+
+| 記録アクション | 発生箇所 | XS | S | M | L |
+|---------------|---------|:--:|:--:|:--:|:--:|
+| DESIGN.md 記録（design-tracker） | Step 0 | MUST | MUST | MUST | MUST |
+| Linear に設計記録コメント | Step 0 | MUST | MUST | MUST | MUST |
+| `log-{feature}.md` PRE エントリ | Step 0 | MUST | MUST | MUST | MUST |
+| ブランチ情報をログに記録 | Step 1 | — | MUST | MUST | MUST |
+| 介入判断をログに記録 | Step 4 | — | — | 該当時 | 該当時 |
+| `implementation-{feature}.md` 保存 | Step 5 | MUST | MUST | MUST | MUST |
+| `log-{feature}.md` POST エントリ | Step 5 | MUST | MUST | MUST | MUST |
+| Linear に実装完了コメント | Step 5 | MUST | MUST | MUST | MUST |
+
+> **Linear タスクIDが無い場合**: ユーザーに確認する。「Linear タスクIDが見つかりません。Linear への投稿をスキップしますか？それともタスクIDを指定しますか？」と質問し、指示に従う。**暗黙的なスキップは禁止。**
 
 ## Workflow (Full — Tier L)
 
 ```
 Step 0: Record Design Decisions
-  /design-tracker で設計決定を DESIGN.md に記録
+  0-1. /design-tracker で設計決定を DESIGN.md に記録
+  0-2. [MUST] Linear に設計記録コメントを投稿
+  0-3. [MUST] log-{feature}.md に PRE エントリ追記
     ↓
 Step 1: Create Feature Branch
-  feature/{name} ブランチを作成
+  1-1. feature/{name} ブランチを作成
+  1-2. [MUST] ブランチ情報を log-{feature}.md に記録
     ↓
-Step 2: Analyze Plan & Design Team
+Step 2: Analyze Plan & Design Team (M/L only)
   計画からタスク依存関係を分析し、チーム構成を決定
     ↓
-Step 3: Spawn Agent Team
+Step 3: Spawn Agent Team (L only)
   モジュール/レイヤー単位でTeammateを起動
     ↓
-Step 4: Monitor & Coordinate
-  Lead がモニタリング、統合、品質管理
+Step 4: Monitor & Coordinate (L only)
+  4-1. Lead がモニタリング、統合、品質管理
+  4-2. [MUST] 介入判断があれば log-{feature}.md に記録
     ↓
 Step 5: Integration & Verification
-  全タスク完了後、統合テスト実行
+  5-1. 全タスク完了後、統合テスト実行
+  5-2. [MUST] implementation-{feature}.md にサマリー保存
+  5-3. [MUST] log-{feature}.md に POST エントリ追記
+  5-4. [MUST] Linear に実装完了コメントを投稿
 ```
 
 ---
@@ -66,7 +90,7 @@ Step 5: Integration & Verification
 
 これにより、`/startproject` で決定された設計方針が永続化され、実装中・実装後に意思決定の根拠を追跡できる。
 
-### Procedure
+### 0-1. DESIGN.md に記録
 
 1. `/design-tracker` スキルを実行する
 2. `.claude/docs/DESIGN.md` を読み、以下を確認・追記:
@@ -85,7 +109,9 @@ Step 5: Integration & Verification
 
 > この記録は実装完了後のレビュー（`/team-review`）でも参照される。
 
-### Step 0b: Sync Design Decisions to Linear
+### 0-2. [MUST] Linear に設計記録コメントを投稿
+
+**このサブステップは全 tier で必須。スキップ不可。**
 
 `/design-tracker` 完了後、設計決定を Linear タスクにコメントとして投稿する（日本語）：
 
@@ -114,7 +140,13 @@ Linear MCP ツールで、/startproject から引き継いだ Linear タスクID
 
 > **Routing**: `.claude/rules/tool-routing.md` に従い、Gemini サブエージェント経由で計画、Claude MCP で実行する。
 
-同時に `.claude/docs/decisions/log-{feature}.md` に PRE エントリを追記:
+> **Linear タスクIDが無い場合**: ユーザーに「Linear タスクIDが見つかりません。IDを指定しますか？スキップしますか？」と確認する。暗黙的にスキップしてはならない。
+
+### 0-3. [MUST] ローカルログに PRE エントリを追記
+
+**このサブステップは全 tier で必須。スキップ不可。**
+
+`.claude/docs/decisions/log-{feature}.md` に PRE エントリを追記:
 
 ```markdown
 ### [team-implement] PRE — {date}
@@ -130,11 +162,13 @@ Linear MCP ツールで、/startproject から引き継いだ Linear タスクID
 
 **作業開始前に feature ブランチを作成する。**
 
+### 1-1. ブランチ作成
+
 ```
-Step 1: 現在のブランチを記録（deploy 時に戻る先）
+現在のブランチを記録（deploy 時に戻る先）:
   git branch --show-current → 保持しておく
 
-Step 2: feature ブランチを作成・チェックアウト
+feature ブランチを作成・チェックアウト:
   git checkout -b feature/{feature-name}
 ```
 
@@ -142,9 +176,9 @@ Step 2: feature ブランチを作成・チェックアウト
 
 ブランチ名の `{feature-name}` は `/startproject` で指定された機能名をケバブケースに変換して使用する（例: `feature/user-authentication`）。
 
-### Step 1b: Record Branch Info
+### 1-2. [MUST] ブランチ情報をログに記録
 
-ブランチ作成情報をローカルログに記録する：
+**このサブステップは S/M/L tier で必須。スキップ不可。**
 
 `.claude/docs/decisions/log-{feature}.md` に DECISION エントリを追記:
 
@@ -288,9 +322,9 @@ Wait for all teammates to complete their tasks.
 - テスト実行（pytest）
 - 型チェック（ty）
 
-### Step 4b: Record Implementation Decisions
+### 4-2. [MUST] 介入判断をログに記録
 
-Lead がモニタリング中に介入判断を行った場合、ローカルログに記録する：
+**Lead がモニタリング中に介入判断を行った場合、必ずローカルログに記録する。該当する介入がなければこのサブステップは不要。**
 
 `.claude/docs/decisions/log-{feature}.md` に DECISION エントリを追記:
 
@@ -315,6 +349,8 @@ Lead がモニタリング中に介入判断を行った場合、ローカルロ
 
 **全タスク完了後、統合検証を行う。**
 
+### 5-1. 品質チェック実行
+
 ```bash
 # All quality checks
 uv run ruff check .
@@ -326,7 +362,7 @@ uv run pytest -v
 poe all
 ```
 
-### Integration Report
+品質チェック通過後、ユーザーに Integration Report を提示する：
 
 ```markdown
 ## 実装完了: {feature}
@@ -346,9 +382,9 @@ poe all
 `/team-review` で並列レビューを実行してください
 ```
 
-### Step 5b: Save Implementation Summary Locally
+### 5-2. [MUST] 実装サマリーをローカルに保存
 
-実装完了サマリーをローカルに保存する：
+**このサブステップは全 tier で必須。スキップ不可。**
 
 1. `.claude/docs/decisions/implementation-{feature}.md` に保存:
 
@@ -377,7 +413,11 @@ poe all
 {date}
 ```
 
-2. `.claude/docs/decisions/log-{feature}.md` に POST エントリを追記:
+### 5-3. [MUST] ローカルログに POST エントリを追記
+
+**このサブステップは全 tier で必須。スキップ不可。**
+
+`.claude/docs/decisions/log-{feature}.md` に POST エントリを追記:
 
 ```markdown
 ### [team-implement] POST — {date}
@@ -387,17 +427,19 @@ poe all
 - **成果物**: `.claude/docs/decisions/implementation-{feature}.md`
 ```
 
-### Post Completion to Linear
+### 5-4. [MUST] Linear に実装完了コメントを投稿
 
-実装完了後、Linear タスクに作業内容をコメントとして追加する：
+**このサブステップは全 tier で必須。スキップ不可。**
+
+> **Linear タスクIDが無い場合**: ユーザーに「Linear タスクIDが見つかりません。IDを指定しますか？スキップしますか？」と確認する。暗黙的にスキップしてはならない。
 
 ```
-Step 1: GitHub MCP ツールでコミット情報・変更ファイルを取得
+手順 1: GitHub MCP ツールでコミット情報・変更ファイルを取得
   - feature/{feature-name} ブランチのコミット履歴
   - 各コミットのハッシュ、メッセージ、URL
   - 変更ファイル一覧
 
-Step 2: Linear MCP ツールで、/startproject から引き継いだ Linear タスクIDに以下をコメント:
+手順 2: Linear MCP ツールで、/startproject から引き継いだ Linear タスクIDに以下をコメント:
 
 ## 実装完了: {feature}
 
