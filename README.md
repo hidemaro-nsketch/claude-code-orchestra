@@ -380,3 +380,7 @@ https://github.com/musistudio/claude-code-router
 - use playwrite mcp for web development (e.g. testing, e2e testing, web scraping)
 
 - use git worktree for parallel development 
+
+- use hook for slack notification
+
+- use claude code mcp for mobile development (e.g. android, ios)
