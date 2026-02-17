@@ -10,8 +10,6 @@ Claude Code (Orchestrator) ─┬─ Codex CLI (Deep Reasoning)
 
 forked from https://github.com/DeL-TaiseiOzaki/claude-code-orchestra
 
-## reference 
-- https://github.com/obra/superpowers
 
 ## Quick Start
 
@@ -384,3 +382,7 @@ https://github.com/musistudio/claude-code-router
 - use hook for slack notification
 
 - use claude code mcp for mobile development (e.g. android, ios)
+
+## reference 
+- https://github.com/obra/superpowers
+- https://github.com/zeroclaw-labs/zeroclaw
