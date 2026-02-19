@@ -36,6 +36,11 @@ ROUTED_GIT_SUBCOMMANDS = {
     "remote",
     "am",
     "format-patch",
+    "blame",
+    "show",
+    "bisect",
+    "reflog",
+    "shortlog",
 }
 
 # Git subcommands that are ALLOWED directly (informational / read-only)

@@ -87,6 +87,7 @@ ALL git operations should be routed through a Gemini subagent.
 - `git commit`, `git push`, `git pull`, `git merge`, `git rebase`
 - `git branch`, `git checkout`, `git switch`
 - `git log`, `git diff`, `git status`
+- `git blame`, `git show`, `git bisect`, `git reflog`, `git shortlog`
 
 > **ブランチ情報・コミット情報の取得**: GitHub MCP ツールを優先して使用する（下記「GitHub Operations」参照）。`git` CLI はローカル操作（commit, checkout 等）に使用する。
 
@@ -111,6 +112,54 @@ Task tool parameters:
 
 - Reading `.gitignore` or git config files (file read, not git operation)
 - `git status` when only checking current state for context (informational only)
+
+## Git History Analysis via Gemini
+
+git 履歴をたどる操作は、出力が大きくなりやすく分析も必要なため、Gemini サブエージェントに委託する。
+
+### Scope
+
+- `git blame` — ファイルの各行の最終変更者・コミットを特定
+- `git show` — 特定コミットの詳細（差分、メタデータ）を表示
+- `git bisect` — バグ導入コミットの二分探索
+- `git reflog` — HEAD の移動履歴を追跡
+- `git shortlog` — コミット数の著者別集計
+- `git log` の高度な使い方（`--follow`, `--all`, `--graph`, 範囲指定等）
+
+### Use Cases
+
+| 場面 | 操作例 | 目的 |
+|------|--------|------|
+| コード理解 | `git log --follow <file>`, `git blame <file>` | ファイルの変更経緯を把握 |
+| デバッグ | `git bisect`, `git blame` | 問題を導入したコミットを特定 |
+| レビュー | `git show <commit>`, `git log <range>` | コミット内容の詳細確認 |
+| 影響分析 | `git log --all -- <path>` | 特定パスの変更履歴を調査 |
+
+### How to Route
+
+```
+Task tool parameters:
+- subagent_type: "general-purpose"
+- prompt: |
+    Perform git history analysis via Gemini CLI.
+
+    Task: {description}
+
+    Use Gemini to plan the analysis approach:
+    gemini -p "Plan: analyze git history for {purpose}" 2>/dev/null
+
+    Then execute the git commands based on Gemini's plan.
+    Summarize findings concisely.
+```
+
+### Triggers
+
+| User Input | Action |
+|------------|--------|
+| 「履歴を調べて」「変更経緯を見て」 | Route to Gemini subagent |
+| 「blame して」「誰が変更した？」 | Route to Gemini subagent |
+| 「いつから変わった？」「原因コミットを探して」 | Route to Gemini subagent |
+| `git blame *` / `git show *` / `git bisect *` | Route to Gemini subagent |
 
 ## GitHub Operations via Gemini (MCP)
 

@@ -58,6 +58,7 @@ Consult Gemini when **external information is actually needed**:
 2. **Library research** - Comparison, best practices, known issues
 3. **Multimodal tasks** - Video, audio, PDF content extraction
 4. **Codebase analysis** - Repository-wide architecture (large scope only)
+5. **Git history analysis** - `git blame`, `git show`, `git bisect`, `git reflog` 等の履歴探索（出力が大きく分析が必要）
 
 ### Trigger Phrases (User Input)
 
@@ -68,6 +69,7 @@ Consult Gemini when **external information is actually needed**:
 | 「このPDF/動画/音声を見て」 | "Analyze this PDF/video/audio" |
 | 「最新のドキュメントを確認して」 | "Check the latest documentation" |
 | 「〜について情報を集めて」 | "Gather information about X" |
+| 「履歴を調べて」「blame して」「変更経緯を見て」 | "Check git history" "Run blame" |
 
 ## When NOT to Consult
 

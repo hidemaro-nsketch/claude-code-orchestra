@@ -128,6 +128,9 @@ Explore agent / Glob / Grep / Read を使い、以下を把握:
 - 関連する既存コードとパターン
 - 技術スタック・依存関係
 - テスト構造
+
+git 履歴の調査が必要な場合（変更経緯の把握、blame 等）:
+→ Gemini サブエージェントに委託する（.claude/rules/tool-routing.md 参照）
 ```
 
 ### Step 2: Linear Task Linking
