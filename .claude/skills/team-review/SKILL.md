@@ -4,6 +4,8 @@ description: |
   Parallel code review using Agent Teams. Spawns specialized reviewers
   (security, quality, test coverage) to review implementation from
   different perspectives simultaneously. Run after implementation.
+context: fork
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob, Agent, AskUserQuestion, SendMessage, TaskCreate, TaskUpdate, TaskList, TaskGet, TodoWrite, ToolSearch
 metadata:
   short-description: Parallel review with Agent Teams
 ---

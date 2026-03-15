@@ -189,7 +189,15 @@
       "Bash(else)",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(true)"
+      "Bash(true)",
+      "Skill(startproject)",
+      "Skill(team-implement)",
+      "Skill(team-review)",
+      "Skill(deploy)",
+      "mcp__linear-server__save_comment",
+      "mcp__linear-server__get_issue",
+      "mcp__linear-server__save_issue",
+      "mcp__linear-server__list_issues"
     ],
     "deny": [
       "Read(./.env)",
