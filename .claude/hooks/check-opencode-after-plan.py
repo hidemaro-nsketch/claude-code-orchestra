@@ -1,49 +1,13 @@
 #!/usr/bin/env python3
 """
-PostToolUse hook: Suggest OpenCode review after Plan tasks.
+PostToolUse hook: Suggest OpenCode review after Plan agent tasks only.
 
-This hook runs after Task tool execution and suggests OpenCode consultation
-for reviewing plans and implementation strategies.
+Only fires when the Plan subagent type is used explicitly.
+Does not fire on general task keywords.
 """
 
 import json
 import sys
-
-# Task descriptions that suggest planning/design work
-PLAN_INDICATORS = [
-    "plan",
-    "design",
-    "architect",
-    "structure",
-    "implement",
-    "strategy",
-    "approach",
-    "solution",
-    "refactor",
-    "migrate",
-    "optimize",
-]
-
-
-def should_suggest_opencode_review(
-    tool_input: dict, tool_output: str | None = None
-) -> tuple[bool, str]:
-    """Determine if OpenCode review should be suggested after task completion."""
-    subagent_type = tool_input.get("subagent_type", "").lower()
-    description = tool_input.get("description", "").lower()
-    prompt = tool_input.get("prompt", "").lower()
-
-    # Check if this is a Plan agent
-    if subagent_type == "plan":
-        return True, "Plan task completed"
-
-    # Check description/prompt for planning keywords
-    combined_text = f"{description} {prompt}"
-    for indicator in PLAN_INDICATORS:
-        if indicator in combined_text:
-            return True, f"Task involves '{indicator}'"
-
-    return False, ""
 
 
 def main():
@@ -51,24 +15,21 @@ def main():
         data = json.load(sys.stdin)
         tool_name = data.get("tool_name", "")
 
-        # Only process Task tool
         if tool_name != "Task":
             sys.exit(0)
 
         tool_input = data.get("tool_input", {})
-        tool_output = data.get("tool_output", "")
+        subagent_type = tool_input.get("subagent_type", "").lower()
 
-        should_suggest, reason = should_suggest_opencode_review(tool_input, tool_output)
-
-        if should_suggest:
+        # Only fire for explicit Plan agent
+        if subagent_type == "plan":
             output = {
                 "hookSpecificOutput": {
                     "hookEventName": "PostToolUse",
                     "additionalContext": (
-                        f"[OpenCode Review Suggestion] {reason}. "
-                        "Consider having OpenCode review this plan for potential improvements. "
-                        "**Recommended**: Use Task tool with subagent_type='general-purpose' "
-                        "to consult OpenCode and preserve main context."
+                        "[Plan Review] Plan task completed. "
+                        "Consider having OpenCode review the plan if it involves "
+                        "significant architecture decisions."
                     ),
                 }
             }

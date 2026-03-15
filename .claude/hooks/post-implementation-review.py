@@ -1,42 +1,38 @@
 #!/usr/bin/env python3
 """
-PostToolUse hook: Suggest OpenCode review after significant implementations.
+PostToolUse hook: Suggest code review after large implementations.
 
-Tracks file changes and suggests code review when substantial
-code has been written.
+Only fires once per session when 8+ source files or 500+ lines
+have been modified. Significantly raised thresholds to avoid noise.
 """
 
 import json
 import os
 import sys
 
-# Input validation constants
 MAX_PATH_LENGTH = 4096
 MAX_CONTENT_LENGTH = 1_000_000
 
+STATE_FILE = "/tmp/claude-code-implementation-state.json"
+
+# Raised thresholds to avoid noise
+MIN_FILES_FOR_REVIEW = 8
+MIN_LINES_FOR_REVIEW = 500
+
+SOURCE_EXTENSIONS = {".py", ".ts", ".js", ".tsx", ".jsx", ".go", ".rs"}
+
 
 def validate_input(file_path: str, content: str) -> bool:
-    """Validate input for security."""
     if not file_path or len(file_path) > MAX_PATH_LENGTH:
         return False
     if len(content) > MAX_CONTENT_LENGTH:
         return False
-    # Check for path traversal
     if ".." in file_path:
         return False
     return True
 
 
-# State file to track changes in this session
-STATE_FILE = "/tmp/claude-code-implementation-state.json"
-
-# Thresholds for suggesting review
-MIN_FILES_FOR_REVIEW = 3
-MIN_LINES_FOR_REVIEW = 100
-
-
 def load_state() -> dict:
-    """Load session state."""
     try:
         if os.path.exists(STATE_FILE):
             with open(STATE_FILE) as f:
@@ -47,7 +43,6 @@ def load_state() -> dict:
 
 
 def save_state(state: dict):
-    """Save session state."""
     try:
         with open(STATE_FILE, "w") as f:
             json.dump(state, f)
@@ -56,63 +51,44 @@ def save_state(state: dict):
 
 
 def count_lines(content: str) -> int:
-    """Count meaningful lines in content."""
     lines = content.split("\n")
-    # Count non-empty, non-comment lines
-    meaningful = [l for l in lines if l.strip() and not l.strip().startswith("#")]
-    return len(meaningful)
-
-
-def should_suggest_review(state: dict) -> tuple[bool, str]:
-    """Check if we should suggest a code review."""
-    if state.get("review_suggested"):
-        return False, ""
-
-    files_count = len(state.get("files_changed", []))
-    total_lines = state.get("total_lines", 0)
-
-    if files_count >= MIN_FILES_FOR_REVIEW:
-        return True, f"{files_count} files modified"
-
-    if total_lines >= MIN_LINES_FOR_REVIEW:
-        return True, f"{total_lines}+ lines written"
-
-    return False, ""
+    return len([l for l in lines if l.strip() and not l.strip().startswith("#")])
 
 
 def main():
     try:
         data = json.load(sys.stdin)
-        tool_name = data.get("tool_name", "")
-
-        # Only process Write/Edit tools
-        if tool_name not in ["Write", "Edit"]:
+        if data.get("tool_name") not in ["Write", "Edit"]:
             sys.exit(0)
 
         tool_input = data.get("tool_input", {})
         file_path = tool_input.get("file_path", "")
         content = tool_input.get("content", "") or tool_input.get("new_string", "")
 
-        # Validate input
         if not validate_input(file_path, content):
             sys.exit(0)
 
         # Skip non-source files
-        if not any(
-            file_path.endswith(ext)
-            for ext in [".py", ".ts", ".js", ".tsx", ".jsx", ".go", ".rs"]
-        ):
+        ext = os.path.splitext(file_path)[1]
+        if ext not in SOURCE_EXTENSIONS:
             sys.exit(0)
 
-        # Load and update state
         state = load_state()
         if file_path not in state["files_changed"]:
             state["files_changed"].append(file_path)
         state["total_lines"] += count_lines(content)
         save_state(state)
 
-        # Check if review should be suggested
-        should_review, reason = should_suggest_review(state)
+        # Only fire once per session
+        if state.get("review_suggested"):
+            sys.exit(0)
+
+        files_count = len(state["files_changed"])
+        total_lines = state["total_lines"]
+
+        should_review = (
+            files_count >= MIN_FILES_FOR_REVIEW or total_lines >= MIN_LINES_FOR_REVIEW
+        )
 
         if should_review:
             state["review_suggested"] = True
@@ -122,10 +98,8 @@ def main():
                 "hookSpecificOutput": {
                     "hookEventName": "PostToolUse",
                     "additionalContext": (
-                        f"[Code Review Suggestion] {reason} in this session. "
-                        "Consider having OpenCode review the implementation. "
-                        "**Recommended**: Use Task tool with subagent_type='general-purpose' "
-                        "to consult OpenCode with git diff and preserve main context."
+                        f"[Review Milestone] {files_count} files, {total_lines} lines modified. "
+                        "Consider running /team-review for a structured review."
                     ),
                 }
             }

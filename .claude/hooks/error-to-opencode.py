@@ -1,38 +1,32 @@
 #!/usr/bin/env python3
 """
-PostToolUse hook: Detect errors from Bash commands and suggest opencode-debugger.
+PostToolUse hook: Suggest opencode-debugger for significant errors only.
 
-Broader than post-test-analysis.py — catches ANY Bash error,
-not just test/build commands. Directs to the opencode-debugger subagent.
+Only fires when 3+ distinct error patterns are found, indicating a
+complex issue worth debugging with OpenCode. Single errors and
+trivial failures are ignored.
 """
 
 import json
 import re
 import sys
 
-# Error patterns indicating something went wrong
 ERROR_PATTERNS = [
     r"Traceback \(most recent call last\)",
-    r"(?:Error|Exception):\s+\S",
-    r"error\[\w+\]",
-    r"panic:",
-    r"FAIL[ED:\s]",
-    r"fatal:",
-    r"segmentation fault",
-    r"core dumped",
-    r"(?:Cannot|Could not|Unable to)\s",
     r"(?:TypeError|ValueError|AttributeError|ImportError|KeyError|IndexError|RuntimeError)",
     r"(?:SyntaxError|NameError|FileNotFoundError|PermissionError|OSError)",
+    r"panic:",
+    r"segmentation fault",
+    r"core dumped",
     r"npm ERR!",
     r"cargo error",
 ]
 
-# Commands to ignore (not useful to debug)
+# Minimum distinct patterns to trigger suggestion
+MIN_PATTERNS_FOR_SUGGESTION = 3
+
 IGNORE_COMMANDS = [
-    "git status",
-    "git log",
-    "git diff",
-    "git branch",
+    "git ",
     "ls",
     "pwd",
     "cat",
@@ -42,9 +36,10 @@ IGNORE_COMMANDS = [
     "which",
     "type",
     "true",
+    "opencode ",
+    "gemini ",
 ]
 
-# Outputs to ignore (trivial / expected errors)
 IGNORE_OUTPUTS = [
     "command not found",
     "No such file or directory",
@@ -54,50 +49,33 @@ IGNORE_OUTPUTS = [
     "Everything up-to-date",
 ]
 
-# Skip if the command itself is an OpenCode/Gemini call (avoid recursive suggestions)
-SKIP_COMMANDS = [
-    "opencode ",
-    "gemini ",
-]
-
-MIN_OUTPUT_LENGTH = 20
+MIN_OUTPUT_LENGTH = 50
 
 
-def should_ignore_command(command: str) -> bool:
-    """Check if the command should be ignored."""
-    command_stripped = command.strip()
+def should_ignore(command: str, output: str) -> bool:
+    cmd = command.strip()
     for ignore in IGNORE_COMMANDS:
-        if command_stripped.startswith(ignore):
+        if cmd.startswith(ignore):
             return True
-    for skip in SKIP_COMMANDS:
-        if skip in command_stripped:
-            return True
-    return False
-
-
-def should_ignore_output(output: str) -> bool:
-    """Check if the output contains only trivial errors."""
     for ignore in IGNORE_OUTPUTS:
         if ignore in output and output.count("\n") < 5:
             return True
     return False
 
 
-def detect_errors(output: str) -> list[str]:
-    """Detect error patterns in the output."""
-    found = []
+def detect_errors(output: str) -> int:
+    """Count distinct error patterns found."""
+    count = 0
     for pattern in ERROR_PATTERNS:
         if re.search(pattern, output, re.IGNORECASE):
-            found.append(pattern)
-    return found
+            count += 1
+    return count
 
 
-def main() -> None:
+def main():
     try:
         data = json.load(sys.stdin)
-        tool_name = data.get("tool_name", "")
-
-        if tool_name != "Bash":
+        if data.get("tool_name") != "Bash":
             sys.exit(0)
 
         tool_input = data.get("tool_input", {})
@@ -107,30 +85,21 @@ def main() -> None:
             "content", ""
         )
 
-        if not command or not tool_output:
+        if not command or len(tool_output) < MIN_OUTPUT_LENGTH:
             sys.exit(0)
 
-        if len(tool_output) < MIN_OUTPUT_LENGTH:
+        if should_ignore(command, tool_output):
             sys.exit(0)
 
-        if should_ignore_command(command):
-            sys.exit(0)
+        error_count = detect_errors(tool_output)
 
-        if should_ignore_output(tool_output):
-            sys.exit(0)
-
-        errors = detect_errors(tool_output)
-
-        if errors:
-            error_count = len(errors)
+        if error_count >= MIN_PATTERNS_FOR_SUGGESTION:
             output = {
                 "hookSpecificOutput": {
                     "hookEventName": "PostToolUse",
                     "additionalContext": (
-                        f"[Error Detected] {error_count} error pattern(s) found in command output. "
-                        "**Action**: Use the `opencode-debugger` subagent to analyze this error. "
-                        "Pass the full command and error output to the subagent for OpenCode-powered diagnosis. "
-                        "Example: Task(subagent_type='opencode-debugger', prompt='Analyze this error: ...')"
+                        f"[Error Detected] {error_count} distinct error patterns found. "
+                        "Consider using `opencode-debugger` subagent for analysis."
                     ),
                 }
             }

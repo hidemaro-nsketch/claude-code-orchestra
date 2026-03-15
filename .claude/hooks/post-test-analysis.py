@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """
-PostToolUse hook: Suggest OpenCode analysis after test/build failures.
+PostToolUse hook: Suggest debugging for complex test/build failures.
 
-Analyzes test and build output and suggests OpenCode consultation
-for debugging complex failures.
+Only fires for test/build commands with 5+ failure patterns,
+complementing error-to-opencode.py (which handles general errors).
 """
 
 import json
 import re
 import sys
 
-# Commands that run tests or builds
 TEST_BUILD_COMMANDS = [
     "pytest",
     "npm test",
@@ -27,77 +26,53 @@ TEST_BUILD_COMMANDS = [
     "make build",
 ]
 
-# Patterns indicating failures that need debugging
 FAILURE_PATTERNS = [
     r"FAILED",
-    r"ERROR",
-    r"error\[",
     r"Error:",
-    r"failed",
-    r"error:",
+    r"error\[",
     r"AssertionError",
     r"TypeError",
     r"ValueError",
     r"AttributeError",
     r"ImportError",
-    r"ModuleNotFoundError",
     r"SyntaxError",
-    r"Exception",
     r"Traceback",
     r"panic:",
     r"FAIL:",
 ]
 
-# Simple errors that don't need OpenCode
+# Require significant failures
+MIN_FAILURES = 5
+
 SIMPLE_ERRORS = [
-    "ModuleNotFoundError",  # Usually just need to install
+    "ModuleNotFoundError",
     "command not found",
     "No such file or directory",
 ]
 
 
 def is_test_or_build_command(command: str) -> bool:
-    """Check if the command runs tests or builds."""
     command_lower = command.lower()
     return any(cmd in command_lower for cmd in TEST_BUILD_COMMANDS)
 
 
-def has_complex_failure(output: str) -> tuple[bool, str]:
-    """Check if output contains complex failures that need debugging."""
-    # Skip if it's a simple error
+def count_failures(output: str) -> int:
+    # Skip simple errors
     for simple in SIMPLE_ERRORS:
         if simple in output:
-            return False, ""
+            return 0
 
-    # Count failure patterns
-    failure_count = 0
-    matched_patterns = []
+    count = 0
     for pattern in FAILURE_PATTERNS:
         matches = re.findall(pattern, output, re.IGNORECASE)
-        if matches:
-            failure_count += len(matches)
-            matched_patterns.append(pattern)
-
-    # Multiple failures or complex errors suggest need for OpenCode
-    if failure_count >= 3:
-        return True, f"Multiple failures detected ({failure_count} issues)"
-
-    # Single failure in test output
-    if failure_count >= 1 and any(
-        p in output.lower() for p in ["traceback", "assertion"]
-    ):
-        return True, "Test failure with traceback"
-
-    return False, ""
+        count += len(matches)
+    return count
 
 
 def main():
     try:
         data = json.load(sys.stdin)
-        tool_name = data.get("tool_name", "")
-
-        # Only process Bash tool
-        if tool_name != "Bash":
+        if data.get("tool_name") != "Bash":
             sys.exit(0)
 
         tool_input = data.get("tool_input", {})
@@ -107,22 +82,18 @@ def main():
             "content", ""
         )
 
-        # Check if it's a test/build command
         if not is_test_or_build_command(command):
             sys.exit(0)
 
-        # Check for complex failures
-        has_failure, reason = has_complex_failure(tool_output)
+        failure_count = count_failures(tool_output)
 
-        if has_failure:
+        if failure_count >= MIN_FAILURES:
             output = {
                 "hookSpecificOutput": {
                     "hookEventName": "PostToolUse",
                     "additionalContext": (
-                        f"[OpenCode Debug Suggestion] {reason}. "
-                        "Consider consulting OpenCode for debugging analysis. "
-                        "**Recommended**: Use Task tool with subagent_type='general-purpose' "
-                        "to consult OpenCode with full error context and preserve main context."
+                        f"[Test/Build Failures] {failure_count} failure patterns detected. "
+                        "Consider using `opencode-debugger` subagent for systematic analysis."
                     ),
                 }
             }

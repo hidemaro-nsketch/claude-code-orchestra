@@ -2,95 +2,57 @@
 """
 UserPromptSubmit hook: Route to appropriate agent based on user intent.
 
-Analyzes user prompts and suggests the most appropriate agent
-(OpenCode for design/debug, Gemini for research/multimodal).
+Suggests OpenCode for explicit design/debug consultation requests,
+and Gemini for external research and multimodal tasks only.
+Narrowed triggers to avoid noise on routine tasks.
 """
 
 import json
 import sys
 
-# Triggers for OpenCode (design, debugging, deep reasoning)
+# Triggers for OpenCode — only explicit consultation requests
 OPENCODE_TRIGGERS = {
     "ja": [
-        "設計",
-        "どう設計",
-        "アーキテクチャ",
-        "なぜ動かない",
-        "エラー",
-        "バグ",
-        "デバッグ",
-        "どちらがいい",
-        "比較して",
+        "設計相談",
+        "どう設計すべき",
+        "アーキテクチャ相談",
+        "デバッグして",
+        "原因を分析",
         "トレードオフ",
-        "実装方法",
-        "どう実装",
-        "リファクタリング",
-        "リファクタ",
-        "レビュー",
-        "見て",
-        "考えて",
-        "分析して",
-        "深く",
+        "比較検討",
+        "深く考えて",
+        "second opinion",
     ],
     "en": [
-        "design",
-        "architecture",
-        "architect",
-        "debug",
-        "error",
-        "bug",
-        "not working",
-        "fails",
-        "compare",
-        "trade-off",
-        "tradeoff",
-        "which is better",
-        "how to implement",
-        "implementation",
-        "refactor",
-        "simplify",
-        "review",
-        "check this",
-        "think",
-        "analyze",
-        "deeply",
+        "design consultation",
+        "think deeper",
+        "consult opencode",
+        "second opinion",
+        "trade-off analysis",
+        "debug this",
     ],
 }
 
-# Triggers for Gemini (research, multimodal, large context)
+# Triggers for Gemini — external research and multimodal only
 GEMINI_TRIGGERS = {
     "ja": [
         "調べて",
-        "リサーチ",
-        "調査",
+        "リサーチして",
+        "調査して",
         "PDF",
-        "動画",
-        "音声",
-        "画像",
+        "動画を",
+        "音声を",
         "コードベース全体",
-        "リポジトリ全体",
-        "最新",
-        "ドキュメント",
-        "ライブラリ",
-        "パッケージ",
+        "横断的に",
     ],
     "en": [
-        "research",
+        "research this",
         "investigate",
         "look up",
-        "find out",
-        "pdf",
-        "video",
-        "audio",
-        "image",
+        "analyze this pdf",
+        "analyze this video",
+        "analyze this audio",
         "entire codebase",
-        "whole repository",
-        "latest",
-        "documentation",
-        "docs",
-        "library",
-        "package",
-        "framework",
     ],
 }
 
@@ -99,13 +61,11 @@ def detect_agent(prompt: str) -> tuple[str | None, str]:
     """Detect which agent should handle this prompt."""
     prompt_lower = prompt.lower()
 
-    # Check OpenCode triggers
     for triggers in OPENCODE_TRIGGERS.values():
         for trigger in triggers:
             if trigger in prompt_lower:
                 return "opencode", trigger
 
-    # Check Gemini triggers
     for triggers in GEMINI_TRIGGERS.values():
         for trigger in triggers:
             if trigger in prompt_lower:
@@ -119,8 +79,7 @@ def main():
         data = json.load(sys.stdin)
         prompt = data.get("prompt", "")
 
-        # Skip short prompts
-        if len(prompt) < 10:
+        if len(prompt) < 15:
             sys.exit(0)
 
         agent, trigger = detect_agent(prompt)
@@ -130,10 +89,9 @@ def main():
                 "hookSpecificOutput": {
                     "hookEventName": "UserPromptSubmit",
                     "additionalContext": (
-                        f"[Agent Routing] Detected '{trigger}' - this task may benefit from "
-                        "OpenCode CLI's deep reasoning capabilities. Consider: "
-                        "`opencode run -m github-copilot/gpt-5.4 "
-                        '"{task description}"` for design decisions, debugging, or complex analysis.'
+                        f"[Agent Routing] Detected '{trigger}' - consider using "
+                        "OpenCode CLI for deep reasoning. "
+                        "Use subagent for context isolation."
                     ),
                 }
             }
@@ -144,10 +102,9 @@ def main():
                 "hookSpecificOutput": {
                     "hookEventName": "UserPromptSubmit",
                     "additionalContext": (
-                        f"[Agent Routing] Detected '{trigger}' - this task may benefit from "
-                        "Gemini CLI's research capabilities. Consider: "
-                        '`gemini -p "Research: {topic}" 2>/dev/null` '
-                        "for documentation, library research, or multimodal content."
+                        f"[Agent Routing] Detected '{trigger}' - consider using "
+                        "Gemini CLI for external research or multimodal processing. "
+                        "Use subagent for context isolation."
                     ),
                 }
             }
