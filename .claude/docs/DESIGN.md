@@ -75,6 +75,9 @@ Classification is hybrid: file count + complexity + risk/novelty. Runtime escala
 | Adaptive execution tiers (XS/S/M/L) added | Reduce over-orchestration on small tasks while preserving depth for large work | Single heavyweight workflow for all tasks | 2026-02-16 |
 | Task sizing should use hybrid signals | File count alone misses complexity and risk | File-count-only classification | 2026-02-16 |
 | Runtime promotion (S→M→L) should be explicit | Prevent under-scoped execution when tasks expand during implementation | Static upfront classification only | 2026-02-16 |
+| Unified task file (`task-{id}-{feature}.md`) | Consolidates log/brief/implementation/fix-tasks into one file for session resumption and reduced file scatter | Keep 4 separate files per feature | 2026-03-15 |
+| Task file naming with Linear ID or timestamp | Linear ID provides meaningful identification; timestamp serves as fallback for concurrent task support | Single `current-task.md` (no concurrency), feature-name only (no uniqueness) | 2026-03-15 |
+| Active task auto-detection via frontmatter status | Enables session resumption without asking "which task?" — Glob for `status: active` files | Manual task specification on each session | 2026-03-15 |
 
 ## TODO
 
@@ -110,8 +113,8 @@ Every phase emits exactly 3 event types:
 
 ```
 1. LOCAL WRITE (immediate, every event)
-   → Append to `.claude/docs/decisions/log-{feature}.md`
-   → Also update phase-specific summary files as needed
+   → Append to unified task file `.claude/docs/decisions/task-{id}-{feature}.md`
+   → All sections (Brief, Implementation Summary, Fix Tasks, Decision Log) in one file
 
 2. LINEAR SYNC (batched at POST checkpoint)
    → Collect all PRE + DECISION + POST entries for the phase
@@ -165,14 +168,36 @@ POST checkpoint:
 
 ```
 .claude/docs/decisions/
-  ├── log-{feature}.md              # Canonical append-only decision log (all phases)
-  ├── brief-{feature}.md            # Phase 1 output (startproject)
-  └── implementation-{feature}.md   # Phase 4 output (team-implement Step 5)
+  └── task-{id}-{feature}.md        # Unified task file (Brief + Implementation + Fix Tasks + Decision Log)
 ```
 
-**Flat directory** with `log-{feature}.md` naming convention. Single canonical log
-per feature, with entries chronologically ordered across all phases.
-This avoids nested directories and makes cross-phase auditing easy.
+**統合タスクファイル**: 従来の `log-{feature}.md`、`brief-{feature}.md`、`implementation-{feature}.md`、`fix-tasks-{feature}.md` を 1 つのファイルに統合。
+
+**命名規則**:
+- Linear ID あり: `task-{LINEAR_ID}-{feature}.md` (例: `task-NSKTCH-50-user-auth.md`)
+- Linear ID なし: `task-{YYYYMMDD-HHMM}-{feature}.md` (例: `task-20260315-1430-user-auth.md`)
+
+**ファイル構造**:
+```markdown
+---
+feature: {feature-name}
+linear_id: {LINEAR_ID or null}
+status: active | completed
+tier: XS | S | M | L
+branch: feature/{feature-name}
+created: {date}
+---
+
+# Task: {feature-name}
+
+## Brief
+## Implementation Summary
+## Fix Tasks
+## Decision Log
+```
+
+**セッション復帰**: `status: active` のタスクファイルを Glob で検索し、自動復帰する。
+複数ある場合はユーザーに選択肢を提示する。
 
 ### Log Entry Format (Markdown)
 
@@ -212,7 +237,14 @@ Each phase's POST checkpoint generates a single Linear comment:
 
 ---
 
-### Gap Solutions (9 Gaps)
+### Gap Solutions (9 Gaps) — Historical
+
+> **DEPRECATED — DO NOT FOLLOW**: これらの Gap Solutions は統合タスクファイル (`task-{id}-{feature}.md`) 導入以前の設計記録であり、歴史的参考資料として残している。
+> 以下の本文中に登場する個別ファイル参照（`log-{feature}.md`, `brief-{feature}.md`, `implementation-{feature}.md`, `fix-tasks-{feature}.md`）は **すべて廃止済み**。
+> 現在の正しい仕様は各 SKILL.md を参照すること。統合タスクファイル `task-{id}-{feature}.md` の対応セクションに置き換えられている。
+> **Claude はこの Gap Solutions セクション内の手順に従ってはならない。**
+
+
 
 #### Gap 1: startproject Phase 1 — Project Brief not saved
 
@@ -511,7 +543,7 @@ Append to `.claude/docs/decisions/log-{feature}.md`:
 |---------------|-----------|
 | Local-first writes | Immediate, reliable, no external dependency |
 | Batched Linear sync at POST | Reduces API noise, produces coherent phase comments |
-| Flat `log-{feature}.md` naming | Avoids nested directories, enables cross-phase audit trail |
+| Unified `task-{id}-{feature}.md` file | Consolidates all per-feature files, enables session auto-detection |
 | Markdown format (not JSONL) | Human-readable in-repo, easy to review in PRs |
 | Japanese Linear comments | Matches team language protocol for external tools |
 | PRE/DECISION/POST pattern | Consistent across all 4 phases, minimal cognitive overhead |
@@ -532,6 +564,7 @@ Append to `.claude/docs/decisions/log-{feature}.md`:
 
 | Date | Changes |
 |------|---------|
+| 2026-03-15 | Unified task file: consolidated log/brief/implementation/fix-tasks into single `task-{id}-{feature}.md` with frontmatter-based session auto-detection |
 | 2026-02-16 | Full Decision Logging Architecture: 9-gap solutions, PRE/DECISION/POST pattern, local-first dual-write, per-feature decision directories, Linear sync templates (Japanese) |
 | 2026-02-16 | Added adaptive execution sizing model (XS/S/M/L), hybrid classification principle, and runtime escalation policy |
 | 2026-02-08 | Major redesign for Opus 4.6: 1M context, Agent Teams, skill pipeline |
