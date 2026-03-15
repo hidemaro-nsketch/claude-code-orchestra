@@ -65,8 +65,9 @@ by providing cross-cutting routing decisions.
 | Codebase analysis | **Gemini subagent** | `gemini-explore` or `general-purpose` |
 | Library research | **Gemini** | Google Search grounding |
 | Design decisions | **OpenCode** | Subagent or Agent Teams |
-| git/docker/ruff/uv (in `context: fork` skills) | **Direct** | スキル内で直接実行 |
-| git/docker/ruff/uv (ad-hoc) | **Subagent** | サブエージェント経由で直接実行 |
+| git (all operations) | **`/deploy` skill** | Deploy Workflow or Ad-hoc Git モード |
+| docker/ruff/uv (in `context: fork` skills) | **Direct** | スキル内で直接実行 |
+| docker/ruff/uv (ad-hoc) | **Subagent** | サブエージェント経由で直接実行 |
 | GitHub MCP / Linear MCP | **Direct or Subagent** | スキル内は直接、アドホックはサブエージェント |
 
 ## Codebase Analysis via Gemini
@@ -115,40 +116,46 @@ Task tool parameters:
 
 ## Git Operations
 
+**全てのアドホック git 操作は `/deploy` スキル経由で実行する。**
+
+`/deploy` スキルは 2 つのモードを持つ:
+- **Deploy Workflow モード**: PR 作成 + push + Linear 投稿（従来の deploy フロー）
+- **Ad-hoc Git モード**: 単発の git 操作（commit, log, diff, branch 等）
+
 ### `context: fork` スキル内
 
 `/team-implement`, `/team-review`, `/deploy` はスキル内で git コマンドを直接実行する。
 
 ### アドホック操作
 
-スキル外でのアドホックな git 操作はサブエージェント経由で実行する（コンテキスト分離のため）。
+スキル外でのアドホックな git 操作は **`/deploy` スキル（Ad-hoc Git モード）** 経由で実行する。
+`/deploy` は `context: fork` で動作するため、コンテキスト分離が保証される。
 
-#### Claude が直接実行してよい操作
+#### Claude が直接実行してよい操作（例外）
 
 - `git status`（現在の状態確認のみ）
 - `git branch --show-current`（現在のブランチ名取得）
 - `git rev-parse`, `git config --get`（情報取得）
 - `.gitignore` 等の設定ファイル読み取り（Read ツール経由）
 
-#### サブエージェント経由で実行する操作
+#### `/deploy` スキル経由で実行する操作
 
-```
-Task tool parameters:
-- subagent_type: "general-purpose"
-- prompt: |
-    Perform the following git operation.
-    Task: {description}
-    Execute the git commands directly and report results concisely.
-```
+| 操作 | コマンド例 |
+|------|-----------|
+| コミット | `git add`, `git commit` |
+| ブランチ | `git branch`, `git checkout`, `git switch`, `git merge` |
+| 履歴参照 | `git log`, `git diff`, `git show`, `git blame` |
+| リモート | `git push`, `git pull`, `git fetch` |
+| その他 | `git stash`, `git rebase`, `git cherry-pick`, `git tag` |
 
 ### Git Triggers
 
 | User Input | Action |
 |------------|--------|
-| 「コミットして」「pushして」 | サブエージェント経由で実行 |
-| 「PRを作って」「ブランチを切って」 | サブエージェント経由で実行 |
-| 「git log見せて」「差分を見せて」 | サブエージェント経由で実行 |
-| 「履歴を調べて」「blame して」 | サブエージェント経由で実行 |
+| 「コミットして」「pushして」 | `/deploy` スキル経由で実行 |
+| 「PRを作って」「ブランチを切って」 | `/deploy` スキル経由で実行 |
+| 「git log見せて」「差分を見せて」 | `/deploy` スキル経由で実行 |
+| 「履歴を調べて」「blame して」 | `/deploy` スキル経由で実行 |
 
 ## GitHub / Linear MCP Operations
 

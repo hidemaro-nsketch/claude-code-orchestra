@@ -1,19 +1,73 @@
 ---
 name: deploy
 description: |
-  Push the feature branch to remote, create a PR, and switch back to the original branch.
-  Run after /team-review completes. Handles git push, PR creation, and branch cleanup.
+  Git operations skill. Handles both workflow deploys (push, PR, branch cleanup)
+  and ad-hoc git operations (commit, log, diff, branch, etc.).
+  All git operations are routed through this skill for context isolation.
 context: fork
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, AskUserQuestion, ToolSearch, mcp__linear-server__save_comment, mcp__linear-server__get_issue, mcp__linear-server__save_issue, mcp__linear-server__list_issue_statuses
 metadata:
-  short-description: Push feature branch, create PR, and return to original branch
+  short-description: All git operations - deploy workflow and ad-hoc git commands
 ---
 
 # Deploy
 
+**全ての git 操作を担当するスキル。デプロイワークフローとアドホック git 操作の両方をカバーする。**
+
+## Two Modes
+
+このスキルは 2 つのモードで動作する:
+
+| モード | 発動条件 | 内容 |
+|--------|---------|------|
+| **Deploy Workflow** | `/team-review` 完了後、PR 作成・push 要求時 | フル deploy フロー（Step 1-5） |
+| **Ad-hoc Git** | アドホックな git 操作要求時 | ユーザーが指定した git 操作を直接実行 |
+
+### モード判定ロジック
+
+```
+1. ユーザーの要求を分析
+2. デプロイワークフロー（PR作成 + push + Linear投稿）の意図がある場合 → Deploy Workflow モード
+3. 単発の git 操作（commit, log, diff, branch, blame 等）の意図がある場合 → Ad-hoc Git モード
+4. 不明な場合 → ユーザーに確認
+```
+
+---
+
+## Ad-hoc Git Mode
+
+**ユーザーが指定した git 操作を `context: fork` の分離コンテキストで直接実行する。**
+
+### 対応する操作
+
+| 操作カテゴリ | コマンド例 |
+|-------------|-----------|
+| **コミット** | `git add`, `git commit` |
+| **ブランチ** | `git branch`, `git checkout`, `git switch`, `git merge` |
+| **履歴参照** | `git log`, `git diff`, `git show`, `git blame` |
+| **リモート** | `git push`, `git pull`, `git fetch` |
+| **その他** | `git stash`, `git rebase`, `git cherry-pick`, `git tag` |
+
+### 実行手順
+
+1. ユーザーの要求を解釈し、必要な git コマンドを特定する
+2. 実行前に現在のブランチ・状態を `git status` と `git branch --show-current` で確認
+3. git コマンドを実行する
+4. 結果を日本語で簡潔に報告する
+
+### 注意事項
+
+- **破壊的操作**（`git reset --hard`, `git push --force`, `git clean -f` 等）はユーザーに確認してから実行する
+- コミットメッセージはユーザーが指定しない場合、変更内容に基づいて適切に生成する
+- Linear 投稿や Decision Log 更新は行わない（Deploy Workflow モードのみ）
+
+---
+
+## Deploy Workflow Mode
+
 **feature ブランチを push し、PR を作成して、元のブランチに戻る。**
 
-## Prerequisites
+### Prerequisites
 
 - `/team-implement` で feature ブランチが作成されていること
 - `/team-review` が完了していること
@@ -223,3 +277,5 @@ Linear コメント投稿後、タスクのステータスを "In Review" に変
 - push 前に必ず品質チェックを確認する
 - origin/main とのコンフリクトがある場合はリベースで解消してから PR を作成する
 - 元のブランチに戻れない場合は `git checkout main` にフォールバック
+- **Ad-hoc Git モード**: ユーザーの要求に応じて任意の git コマンドを実行できる。Linear 投稿等は不要
+- **モード判定**: PR作成 + push が明示されていれば Deploy Workflow、それ以外は Ad-hoc Git

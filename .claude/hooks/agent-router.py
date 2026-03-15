@@ -128,15 +128,40 @@ TEAM_REVIEW_TRIGGERS = {
 DEPLOY_TRIGGERS = {
     "ja": [
         "デプロイ",
-        "PRを作",
-        "PR作成",
+        "prを作",
+        "pr作成",
         "pushして",
         "プッシュして",
         "マージ",
         "リリース",
         "本番に",
         "ブランチをpush",
-        "PRを出",
+        "prを出",
+        "コミットして",
+        "コミットを作",
+        "ブランチを切",
+        "ブランチを作",
+        "ブランチを変",
+        "チェックアウト",
+        "git log",
+        "git diff",
+        "git show",
+        "git blame",
+        "git stash",
+        "git rebase",
+        "差分を見",
+        "差分を表示",
+        "履歴を見",
+        "履歴を表示",
+        "履歴を調べ",
+        "ログを見",
+        "ログを表示",
+        "blameして",
+        "stashして",
+        "pullして",
+        "fetchして",
+        "タグを",
+        "cherry-pick",
     ],
     "en": [
         "deploy",
@@ -149,6 +174,26 @@ DEPLOY_TRIGGERS = {
         "release this",
         "ship it",
         "send pr",
+        "commit this",
+        "commit the",
+        "make a commit",
+        "create branch",
+        "switch branch",
+        "checkout",
+        "git log",
+        "git diff",
+        "git show",
+        "git blame",
+        "git stash",
+        "git rebase",
+        "show diff",
+        "show the diff",
+        "show log",
+        "show history",
+        "git pull",
+        "git fetch",
+        "git tag",
+        "cherry-pick",
     ],
 }
 
@@ -183,7 +228,7 @@ GEMINI_TRIGGERS = {
         "調べて",
         "リサーチして",
         "調査して",
-        "PDF",
+        "pdf",
         "動画を",
         "音声を",
         "コードベース全体",
@@ -241,10 +286,10 @@ QUESTION_PATTERNS = {
 
 # Single-file or lightweight operations that should NOT trigger a workflow skill.
 # Only used as a secondary filter (skill triggers always win).
+# NOTE: Git operations (commit, push, branch, etc.) are intentionally excluded
+# from this list because they are routed to /deploy skill (Ad-hoc Git mode).
 LIGHTWEIGHT_OPERATION_PATTERNS = {
     "ja": [
-        "コミットして",
-        "コミットを作",
         "直して",
         "リネームして",
         "フォーマットして",
@@ -252,7 +297,6 @@ LIGHTWEIGHT_OPERATION_PATTERNS = {
         "テストを実行して",
     ],
     "en": [
-        "just commit",
         "fix this typo",
         "rename this",
         "format this",
@@ -370,9 +414,10 @@ SKILL_DESCRIPTIONS = {
         "Run: /team-review"
     ),
     "deploy": (
-        "[Skill Routing] Detected deploy/PR intent (trigger: '{trigger}'). "
-        "This looks like a request to push and create a PR. "
-        "Use `/deploy` skill to push the feature branch, create a PR, and return to the original branch. "
+        "[Skill Routing] Detected git/deploy intent (trigger: '{trigger}'). "
+        "This looks like a git operation request. "
+        "Use `/deploy` skill which handles both deploy workflows (push + PR) "
+        "and ad-hoc git operations (commit, log, diff, branch, etc.) in a context-isolated fork. "
         "Run: /deploy"
     ),
 }

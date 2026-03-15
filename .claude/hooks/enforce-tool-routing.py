@@ -34,9 +34,10 @@ ROUTED_COMMAND_PATTERNS = [
     (re.compile(r"^uv\s+(?:add|remove|sync|lock)\b"), "Dependency management"),
 ]
 
-SUBAGENT_TEMPLATE = (
-    "Agent tool (subagent_type: 'general-purpose') with prompt describing the task. "
-    "The subagent executes commands directly (no Gemini needed)."
+DEPLOY_SKILL_TEMPLATE = (
+    "Use `/deploy` skill for git operations. "
+    "The deploy skill runs in `context: fork` and handles both "
+    "deploy workflows (push + PR) and ad-hoc git operations (commit, log, diff, branch, etc.)."
 )
 
 
@@ -96,18 +97,25 @@ def main():
         should_recommend, category = analyze_command(command)
 
         if should_recommend:
+            if category == "Git operation":
+                context_msg = (
+                    f"**Routing recommendation** [{category}]: "
+                    "This git operation should be routed through the `/deploy` skill. "
+                    f"{DEPLOY_SKILL_TEMPLATE} "
+                    "Allowed directly without /deploy: `git status`, `git branch --show-current`, "
+                    "`git rev-parse`, `git config --get`."
+                )
+            else:
+                context_msg = (
+                    f"**Routing recommendation** [{category}]: "
+                    "Consider running this via a subagent for context isolation. "
+                    "Use: Agent tool (subagent_type: 'general-purpose') with prompt describing the task. "
+                    "Note: `context: fork` skills execute directly — this hook does not apply to them."
+                )
             output = {
                 "hookSpecificOutput": {
                     "hookEventName": "PreToolUse",
-                    "additionalContext": (
-                        f"**Routing recommendation** [{category}]: "
-                        "Consider running this via a subagent for context isolation. "
-                        f"Use: {SUBAGENT_TEMPLATE} "
-                        "Note: `context: fork` skills (startproject, team-implement, "
-                        "team-review, deploy) execute directly — this hook does not apply to them. "
-                        "Allowed directly: `git status`, `git branch --show-current`, "
-                        "`git rev-parse`, `git config --get`."
-                    ),
+                    "additionalContext": context_msg,
                 }
             }
             print(json.dumps(output))

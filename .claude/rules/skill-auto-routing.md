@@ -49,15 +49,19 @@ The hook runs on every `UserPromptSubmit` event and follows this priority:
 
 ### /deploy
 - PR creation, push, or deployment requests
-- Keywords: "deploy", "create PR", "push", "merge", "release"
+- **All ad-hoc git operations** (commit, log, diff, branch, blame, stash, etc.)
+- Keywords: "deploy", "create PR", "push", "merge", "release", "commit", "git log", "diff", "branch", "checkout", "blame", "stash", "pull", "fetch"
 
 ## Lightweight Task Exclusion
 
 The following are NOT routed to skills:
 - Questions and explanations ("what is", "why", "explain")
 - Single-file operations ("fix this", "rename", "format")
-- Direct commands ("commit", "lint", "run tests")
+- Direct commands ("lint", "run tests")
 - Short prompts (under 30 characters)
+
+> **Note**: Git operations ("commit", "push", "diff", etc.) are NOT excluded.
+> They are routed to `/deploy` skill (Ad-hoc Git mode) for context isolation.
 
 ## Interaction with Existing Hooks
 
