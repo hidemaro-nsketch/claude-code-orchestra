@@ -1,9 +1,39 @@
 # Tool Routing Rules
 
-**Defines which tools and operations are delegated to which agent.**
+**Defines which tools and operations are delegated to which agent, and how skills are auto-routed.**
 
 This file complements agent-specific rules (`opencode-delegation.md`, `gemini-delegation.md`)
 by providing cross-cutting routing decisions.
+
+## Skill Auto-Routing
+
+**ユーザーがスキル名を明示しなくても、`UserPromptSubmit` hook (`agent-router.py`) がプロンプトを分析し、適切なスキルを `additionalContext` で提案する。**
+
+→ 詳細: `.claude/rules/skill-auto-routing.md`
+
+### ルーティング優先順位
+
+```
+1. 明示的スキルコマンド (/startproject 等) → そのまま実行
+2. スキル意図検出 + 軽量タスクでない → スキルを提案
+3. エージェント意図検出 (OpenCode/Gemini) → エージェントを提案
+4. いずれにも該当しない → 通常応答
+```
+
+### スキル意図の発火条件
+
+| スキル | 典型的なトリガー |
+|--------|----------------|
+| `/startproject` | 「新機能を作りたい」「issue #Nを進めたい」「計画して」 |
+| `/team-implement` | 「実装して」「承認します」「この計画で進めて」 |
+| `/team-review` | 「レビューして」「品質チェック」「実装完了」 |
+| `/deploy` | 「PRを作って」「pushして」「デプロイ」 |
+
+### 発火しないケース
+
+- 質問・説明依頼
+- 単発の軽微な操作（コミット、lint、テスト実行など）
+- 短すぎるプロンプト（5文字未満）
 
 ## `context: fork` スキルの直接実行
 
