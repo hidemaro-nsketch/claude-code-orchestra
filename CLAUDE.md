@@ -137,6 +137,27 @@ Claude Code (Opus 4.6) のコンテキストは **1M トークン**（実質 **3
 
 → 詳細: `/startproject`, `/team-implement`, `/team-review` skills
 
+### Skill Auto-Routing (MUST FOLLOW)
+
+**スキル名を明示しなくても、ユーザーの意図に応じて自動的にスキルが提案される。**
+
+`UserPromptSubmit` hook (`agent-router.py`) がプロンプトを分析し、4つのスキルのいずれかを `additionalContext` で提案する。
+
+| ユーザーの意図 | 提案されるスキル | 例 |
+|--------------|----------------|-----|
+| 新機能・プロジェクト開始 | `/startproject` | 「新機能を作りたい」「issueを進めたい」 |
+| 承認済み計画の実装 | `/team-implement` | 「この計画で実装して」「実装を開始」 |
+| 実装済みコードのレビュー | `/team-review` | 「レビューして」「品質チェック」 |
+| PR作成・push | `/deploy` | 「PRを作って」「デプロイして」 |
+
+**自動ルーティングが発火しないケース（例外的な処理）:**
+- 質問・説明依頼（「これは何？」「なぜ失敗した？」）
+- 単発の軽微な操作（「コミットして」「修正して」「フォーマットして」）
+- 短いプロンプト（5文字未満）
+- 既にスキル名が明示されている場合
+
+→ 詳細: `.claude/hooks/agent-router.py`
+
 ---
 
 ## Tech Stack
