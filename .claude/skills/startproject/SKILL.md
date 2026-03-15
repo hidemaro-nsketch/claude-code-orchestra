@@ -6,6 +6,8 @@ description: |
   Phase 2: Parallel research & design (Agent Teams: Researcher + Architect).
   Phase 3: Plan synthesis & user approval.
   Implementation is handled separately by /team-implement.
+context: fork
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob, Agent, Skill, AskUserQuestion, SendMessage, TaskCreate, TaskUpdate, TaskList, TaskGet, TodoWrite, ToolSearch, mcp__linear-server__save_comment, mcp__linear-server__get_issue, mcp__linear-server__save_issue
 metadata:
   short-description: Project kickoff with Agent Teams (Plan phase)
 ---

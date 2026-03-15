@@ -4,6 +4,8 @@ description: |
   Parallel implementation using Agent Teams. Spawns teammates per module/layer,
   each owning separate files to avoid conflicts. Uses shared task list with
   dependencies for autonomous coordination. Run after /startproject plan approval.
+context: fork
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob, Agent, Skill, AskUserQuestion, SendMessage, TaskCreate, TaskUpdate, TaskList, TaskGet, TodoWrite, ToolSearch, mcp__linear-server__save_comment, mcp__linear-server__get_issue, mcp__linear-server__save_issue
 metadata:
   short-description: Parallel implementation with Agent Teams
 ---
@@ -138,8 +140,6 @@ Linear MCP ツールで、/startproject から引き継いだ Linear タスクID
 - `.claude/docs/DESIGN.md`
 ```
 
-> **Routing**: `.claude/rules/tool-routing.md` に従い、Gemini サブエージェント経由で計画、Claude MCP で実行する。
-
 > **Linear タスクIDが無い場合**: ユーザーに「Linear タスクIDが見つかりません。IDを指定しますか？スキップしますか？」と確認する。暗黙的にスキップしてはならない。
 
 ### 0-3. [MUST] ローカルログに PRE エントリを追記
@@ -172,8 +172,6 @@ feature ブランチを作成・チェックアウト:
   git checkout -b feature/{feature-name}
 ```
 
-> **Routing**: git 操作は `.claude/rules/tool-routing.md` に従い、Gemini サブエージェント経由で実行する。
-
 ブランチ名の `{feature-name}` は `/startproject` で指定された機能名をケバブケースに変換して使用する（例: `feature/user-authentication`）。
 
 ### 1-2. [MUST] ブランチ情報をログに記録
@@ -185,7 +183,7 @@ feature ブランチを作成・チェックアウト:
 ```markdown
 ### [team-implement] DECISION — {date}
 
-- **担当者**: Claude Lead（Gemini サブエージェント経由）
+- **担当者**: Claude Lead
 - **概要**: フィーチャーブランチ `feature/{feature-name}` を `{base-branch}` から作成
 - **理由**: 標準フィーチャーブランチワークフロー
 - **ステータス**: 承認済み
@@ -434,10 +432,10 @@ poe all
 > **Linear タスクIDが無い場合**: ユーザーに「Linear タスクIDが見つかりません。IDを指定しますか？スキップしますか？」と確認する。暗黙的にスキップしてはならない。
 
 ```
-手順 1: GitHub MCP ツールでコミット情報・変更ファイルを取得
-  - feature/{feature-name} ブランチのコミット履歴
-  - 各コミットのハッシュ、メッセージ、URL
-  - 変更ファイル一覧
+手順 1: git コマンドでコミット情報・変更ファイルを取得
+  git log main..HEAD --oneline          # コミット履歴
+  git diff main..HEAD --name-only       # 変更ファイル一覧
+  git remote get-url origin             # リモートURL（GitHub URL構築用）
 
 手順 2: Linear MCP ツールで、/startproject から引き継いだ Linear タスクIDに以下をコメント:
 
@@ -459,13 +457,13 @@ poe all
 - pytest: {N} tests passed, coverage {N}%
 
 ### 変更ファイル
-- {file list from GitHub MCP}
+- {file list from git diff}
 
 ### 次のステップ
 `/team-review` で並列レビュー予定
 ```
 
-> **Routing**: `.claude/rules/tool-routing.md` に従い、GitHub MCP でコミット情報取得、Linear MCP でコメント投稿。
+> git コマンドで情報取得（`context: fork` で直接実行）、Linear MCP でコメント投稿。
 
 ### Cleanup
 

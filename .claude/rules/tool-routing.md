@@ -5,13 +5,24 @@
 This file complements agent-specific rules (`opencode-delegation.md`, `gemini-delegation.md`)
 by providing cross-cutting routing decisions.
 
+## `context: fork` スキルの直接実行
+
+以下のスキルは `context: fork` で実行され、メインのルーティングフックを経由しない。
+スキル内では git/ruff/uv/gh 等を直接実行する（Gemini 経由不要）：
+
+| スキル | 直接実行する操作 |
+|--------|----------------|
+| `/team-implement` | git checkout/branch、ruff、pytest、uv、Linear MCP |
+| `/team-review` | git diff/log、pytest、ruff |
+| `/deploy` | git push、gh pr create、git checkout、Linear MCP |
+
 ## Adaptive Execution Override
 
 > 参照: `.claude/rules/adaptive-execution.md`
 
 ルーティングルールはタスクサイズに応じて適応される：
 
-- **XS/S タスク**: OpenCode/Gemini への委託は不要。Claude が直接対応する。ただし git/docker/ruff/uv 等のコマンド実行ルーティング（下記テーブル）は全 tier で適用。
+- **XS/S タスク**: OpenCode/Gemini への委託は不要。Claude が直接対応する。
 - **M タスク**: 必要な場合のみ OpenCode サブエージェントで設計相談。Gemini は未知のライブラリ・外部 API がある場合のみ。
 - **L タスク**: フルルーティング（全ルール適用）。
 
@@ -19,20 +30,14 @@ by providing cross-cutting routing decisions.
 
 | Operation | Delegate To | Method |
 |-----------|-------------|--------|
-| git operations | **Gemini subagent** | Bash (`git` commands) |
-| GitHub (MCP) | **Gemini subagent** | Gemini plans, Claude GitHub MCP executes |
-| Linear (MCP) | **Gemini subagent** | Gemini plans, Claude Linear MCP executes |
-| Dependency management | **Gemini subagent** | `uv` commands + Google Search |
-| Changelog / release notes | **Gemini subagent** | `git log` analysis + formatting |
-| Docker operations | **Gemini subagent** | `docker` / `docker-compose` commands |
-| Lint / format execution | **Gemini subagent** | `ruff check` / `ruff format` |
-| Environment setup / diagnostics | **Gemini subagent** | `uv sync`, version checks, etc. |
-| Shell script generation | **Gemini subagent** | Script creation + execution |
-| File organization | **Gemini subagent** | Bulk rename, directory restructure |
+| External research | **Gemini** | Subagent or Agent Teams |
+| Multimodal (PDF/video/audio) | **Gemini** | Subagent |
 | Codebase analysis | **Gemini subagent** | `gemini-explore` or `general-purpose` |
-| Design decisions | OpenCode | Subagent or Agent Teams |
-| External research | Gemini | Subagent or Agent Teams |
-| Multimodal | Gemini | Subagent |
+| Library research | **Gemini** | Google Search grounding |
+| Design decisions | **OpenCode** | Subagent or Agent Teams |
+| git/docker/ruff/uv (in `context: fork` skills) | **Direct** | スキル内で直接実行 |
+| git/docker/ruff/uv (ad-hoc) | **Subagent** | サブエージェント経由で直接実行 |
+| GitHub MCP / Linear MCP | **Direct or Subagent** | スキル内は直接、アドホックはサブエージェント |
 
 ## Codebase Analysis via Gemini
 
@@ -78,446 +83,113 @@ Task tool parameters:
 - Searching for a specific symbol/function (Grep/Glob tools)
 - Quick reference during implementation (targeted file reads)
 
-## Git Operations via Gemini
+## Git Operations
 
-ALL git operations should be routed through a Gemini subagent.
+### `context: fork` スキル内
 
-### Scope
+`/team-implement`, `/team-review`, `/deploy` はスキル内で git コマンドを直接実行する。
 
-- `git commit`, `git push`, `git pull`, `git merge`, `git rebase`
-- `git branch`, `git checkout`, `git switch`
-- `git log`, `git diff`, `git status`
-- `git blame`, `git show`, `git bisect`, `git reflog`, `git shortlog`
+### アドホック操作
 
-> **ブランチ情報・コミット情報の取得**: GitHub MCP ツールを優先して使用する（下記「GitHub Operations」参照）。`git` CLI はローカル操作（commit, checkout 等）に使用する。
+スキル外でのアドホックな git 操作はサブエージェント経由で実行する（コンテキスト分離のため）。
 
-### How to Route
+#### Claude が直接実行してよい操作
 
-```
-Task tool parameters:
-- subagent_type: "general-purpose"
-- prompt: |
-    Perform the following git operation via Gemini CLI.
+- `git status`（現在の状態確認のみ）
+- `git branch --show-current`（現在のブランチ名取得）
+- `git rev-parse`, `git config --get`（情報取得）
+- `.gitignore` 等の設定ファイル読み取り（Read ツール経由）
 
-    Task: {description of git task}
-
-    Use Gemini to plan and execute:
-    gemini -p "Plan the git workflow for: {task description}" 2>/dev/null
-
-    Then execute the git commands based on Gemini's recommendation.
-    Report results back concisely.
-```
-
-### Exceptions (Claude handles directly)
-
-- Reading `.gitignore` or git config files (file read, not git operation)
-- `git status` when only checking current state for context (informational only)
-
-## Git History Analysis via Gemini
-
-git 履歴をたどる操作は、出力が大きくなりやすく分析も必要なため、Gemini サブエージェントに委託する。
-
-### Scope
-
-- `git blame` — ファイルの各行の最終変更者・コミットを特定
-- `git show` — 特定コミットの詳細（差分、メタデータ）を表示
-- `git bisect` — バグ導入コミットの二分探索
-- `git reflog` — HEAD の移動履歴を追跡
-- `git shortlog` — コミット数の著者別集計
-- `git log` の高度な使い方（`--follow`, `--all`, `--graph`, 範囲指定等）
-
-### Use Cases
-
-| 場面 | 操作例 | 目的 |
-|------|--------|------|
-| コード理解 | `git log --follow <file>`, `git blame <file>` | ファイルの変更経緯を把握 |
-| デバッグ | `git bisect`, `git blame` | 問題を導入したコミットを特定 |
-| レビュー | `git show <commit>`, `git log <range>` | コミット内容の詳細確認 |
-| 影響分析 | `git log --all -- <path>` | 特定パスの変更履歴を調査 |
-
-### How to Route
+#### サブエージェント経由で実行する操作
 
 ```
 Task tool parameters:
 - subagent_type: "general-purpose"
 - prompt: |
-    Perform git history analysis via Gemini CLI.
-
+    Perform the following git operation.
     Task: {description}
-
-    Use Gemini to plan the analysis approach:
-    gemini -p "Plan: analyze git history for {purpose}" 2>/dev/null
-
-    Then execute the git commands based on Gemini's plan.
-    Summarize findings concisely.
+    Execute the git commands directly and report results concisely.
 ```
-
-### Triggers
-
-| User Input | Action |
-|------------|--------|
-| 「履歴を調べて」「変更経緯を見て」 | Route to Gemini subagent |
-| 「blame して」「誰が変更した？」 | Route to Gemini subagent |
-| 「いつから変わった？」「原因コミットを探して」 | Route to Gemini subagent |
-| `git blame *` / `git show *` / `git bisect *` | Route to Gemini subagent |
-
-## GitHub Operations via Gemini (MCP)
-
-GitHub MCP ツールを使ってリポジトリ情報を取得する。
-Gemini が計画し、Claude が GitHub MCP ツールで実行する。
-
-### Scope
-
-- ブランチ情報の取得（一覧、詳細、保護状態）
-- コミット履歴の取得（ハッシュ、メッセージ、差分）
-- PR 情報の取得・作成・更新
-- Issue 情報の取得・作成
-- リポジトリ情報の取得
-
-### Use Cases
-
-| 場面 | GitHub MCP の役割 |
-|------|-------------------|
-| `/team-implement` 完了時 | コミット履歴を GitHub MCP で取得 → Linear コメントに追加 |
-| `/deploy` 時 | ブランチ情報・コミットリンクを GitHub MCP で取得 → Linear コメントに追加 |
-| PR 作成 | GitHub MCP で PR を作成 |
-
-### How to Route
-
-```
-Task tool parameters:
-- subagent_type: "general-purpose"
-- prompt: |
-    Retrieve GitHub information using MCP tools.
-
-    Task: {description}
-
-    Step 1: Consult Gemini for approach
-    gemini -p "What GitHub information do I need for: {task}" 2>/dev/null
-
-    Step 2: Use GitHub MCP tools to retrieve the information.
-    - Branch info, commit history, PR details, etc.
-
-    Step 3: Return structured data for use in Linear comments.
-```
-
-### Triggers
-
-| User Input | Action |
-|------------|--------|
-| 「コミット情報を取得して」 | GitHub MCP で取得 |
-| 「ブランチ情報を見せて」 | GitHub MCP で取得 |
-| 「PRを作って」 | GitHub MCP で作成 |
-
----
-
-## Linear Operations via Gemini
-
-Linear operations (via MCP tools) should be planned by Gemini, then executed using
-Claude's MCP tools within a subagent.
-
-### Scope
-
-- Issue creation, update, assignment
-- Project/cycle management
-- Label and status changes
-- Querying issues and filtering
-
-### How to Route
-
-```
-Task tool parameters:
-- subagent_type: "general-purpose"
-- prompt: |
-    Perform the following Linear operation.
-
-    Task: {description of Linear task}
-
-    Step 1: Consult Gemini for approach
-    gemini -p "Plan the Linear workflow for: {task description}.
-    Consider issue structure, labels, assignments, and project organization." 2>/dev/null
-
-    Step 2: Execute using the available Linear MCP tools based on Gemini's plan.
-
-    Step 3: Report results back concisely in Japanese.
-```
-
-### Note on MCP Constraint
-
-MCP tools (including Linear) are only accessible within Claude Code's tool system.
-Gemini CLI cannot directly call MCP tools. The pattern is:
-1. **Gemini plans** the operation (what to create, how to structure)
-2. **Claude subagent executes** using MCP tools
-
-## Trigger Detection
 
 ### Git Triggers
 
 | User Input | Action |
 |------------|--------|
-| 「コミットして」「pushして」 | Route to Gemini subagent |
-| 「PRを作って」「ブランチを切って」 | Route to Gemini subagent |
-| 「git log見せて」「差分を見せて」 | Route to Gemini subagent |
-| `git *` (any git command) | Route to Gemini subagent |
+| 「コミットして」「pushして」 | サブエージェント経由で実行 |
+| 「PRを作って」「ブランチを切って」 | サブエージェント経由で実行 |
+| 「git log見せて」「差分を見せて」 | サブエージェント経由で実行 |
+| 「履歴を調べて」「blame して」 | サブエージェント経由で実行 |
+
+## GitHub / Linear MCP Operations
+
+### `context: fork` スキル内
+
+`/team-implement` と `/deploy` はスキル内で git コマンドによる情報取得 + Linear MCP を直接実行する。
+
+### アドホック操作
+
+スキル外での MCP 操作はサブエージェント経由で実行する。
+
+```
+Task tool parameters:
+- subagent_type: "general-purpose"
+- prompt: |
+    Perform the following MCP operation.
+    Task: {description}
+    Use Linear/GitHub MCP tools directly.
+    Report results back concisely in Japanese.
+```
 
 ### Linear Triggers
 
 | User Input | Action |
 |------------|--------|
-| 「Linearにissue作って」 | Route to Gemini subagent |
-| 「チケットを更新して」 | Route to Gemini subagent |
-| 「タスクのステータスを変えて」 | Route to Gemini subagent |
-| Linear/issue/ticket mention | Route to Gemini subagent |
+| 「Linearにissue作って」 | サブエージェント経由で実行 |
+| 「チケットを更新して」 | サブエージェント経由で実行 |
+| 「タスクのステータスを変えて」 | サブエージェント経由で実行 |
 
-## Dependency Management via Gemini
+## Operational Commands (Subagent Routing)
 
-Package updates, vulnerability checks, and dependency auditing.
+以下の操作はアドホック実行時にサブエージェント経由で実行する（コンテキスト分離のため）。
+`context: fork` スキル内では直接実行される。
 
-### Scope
-
-- `uv add` / `uv remove` / `uv sync`
-- Checking latest versions of packages (Google Search grounding)
-- `pip-audit` / vulnerability scanning
-- Updating `pyproject.toml` dependency versions
-
-### How to Route
+### 共通ルーティング方法
 
 ```
 Task tool parameters:
 - subagent_type: "general-purpose"
 - prompt: |
-    Perform dependency management via Gemini CLI.
-
     Task: {description}
-
-    Step 1: Check latest versions / vulnerabilities via Gemini
-    gemini -p "Check the latest stable versions and known issues for: {packages}" 2>/dev/null
-
-    Step 2: Execute uv commands as needed.
-    Step 3: Report results back concisely.
+    Execute the commands directly and report results concisely.
 ```
 
-### Triggers
+### 対象操作と Triggers
 
-| User Input | Action |
-|------------|--------|
-| 「パッケージを更新して」「依存を追加して」 | Route to Gemini subagent |
-| 「脆弱性チェックして」「audit して」 | Route to Gemini subagent |
-| `uv add *` / `uv sync` | Route to Gemini subagent |
+| 操作 | コマンド例 | Triggers |
+|------|-----------|----------|
+| **依存管理** | `uv add/remove/sync` | 「パッケージを更新して」「依存を追加して」 |
+| **Lint/Format** | `ruff check .`, `ruff format .` | 「lintして」「フォーマットして」 |
+| **Docker** | `docker build/run`, `docker compose` | 「コンテナを起動して」「docker build して」 |
+| **環境セットアップ** | `uv sync`, version checks | 「環境セットアップして」「バージョン確認して」 |
+| **ファイル整理** | bulk rename, directory restructure | 「ファイルを整理して」「リネームして」 |
+| **シェルスクリプト** | Bash script creation | 「スクリプト書いて」「自動化して」 |
+| **Changelog** | `git log` → formatted notes | 「changelog作って」「リリースノート生成して」 |
 
-## Changelog / Release Notes via Gemini
+### 例外（Claude が直接実行してよい操作）
 
-Generate changelogs and release notes from git history.
+- ファイル内容の編集（Edit/Write ツール）
+- 新規ソースコード作成（Claude の領域）
 
-### Scope
+### Gemini を使うケース（外部情報が必要な場合のみ）
 
-- Generating changelogs from `git log`
-- Formatting release notes (Markdown)
-- Summarizing changes between tags/releases
+以下の場合はサブエージェント内で Gemini CLI を併用する：
 
-### How to Route
-
-```
-Task tool parameters:
-- subagent_type: "general-purpose"
-- prompt: |
-    Generate changelog / release notes.
-
-    Task: {description}
-
-    Step 1: Run git log to gather commit history
-    git log --oneline {range}
-
-    Step 2: Use Gemini to summarize and categorize
-    gemini -p "Categorize these commits into Features, Fixes, and Other.
-    Format as a Markdown changelog: {git log output}" 2>/dev/null
-
-    Step 3: Return the formatted changelog.
-```
-
-### Triggers
-
-| User Input | Action |
-|------------|--------|
-| 「changelog作って」「リリースノート生成して」 | Route to Gemini subagent |
-| 「変更履歴をまとめて」 | Route to Gemini subagent |
-
-## Docker Operations via Gemini
-
-Container build, run, and management.
-
-### Scope
-
-- `docker build`, `docker run`, `docker compose up/down`
-- Dockerfile analysis and optimization
-- Container log inspection
-
-### How to Route
+- パッケージの最新バージョン・脆弱性チェック（Google Search grounding）
+- 未知のライブラリの使い方調査
 
 ```
-Task tool parameters:
-- subagent_type: "general-purpose"
-- prompt: |
-    Perform Docker operation via Gemini CLI.
-
-    Task: {description}
-
-    Use Gemini for planning if needed:
-    gemini -p "{question about Docker best practices}" 2>/dev/null
-
-    Then execute docker commands directly.
-    Report results back concisely.
+gemini -p "Check the latest stable versions and known issues for: {packages}" 2>/dev/null
 ```
-
-### Triggers
-
-| User Input | Action |
-|------------|--------|
-| 「コンテナを起動して」「docker build して」 | Route to Gemini subagent |
-| 「docker-compose up して」 | Route to Gemini subagent |
-
-## Lint / Format Execution via Gemini
-
-Code quality checks and auto-formatting.
-
-### Scope
-
-- `ruff check .` / `ruff check --fix .`
-- `ruff format .` / `ruff format --check .`
-- Reporting lint results
-
-### How to Route
-
-```
-Task tool parameters:
-- subagent_type: "general-purpose"
-- prompt: |
-    Run lint/format checks.
-
-    Task: {description}
-
-    Execute:
-    uv run ruff check . 2>&1
-    uv run ruff format --check . 2>&1
-
-    If --fix is requested:
-    uv run ruff check --fix . 2>&1
-    uv run ruff format . 2>&1
-
-    Report results back concisely (errors found, files fixed, etc.).
-```
-
-### Triggers
-
-| User Input | Action |
-|------------|--------|
-| 「lintして」「フォーマットして」 | Route to Gemini subagent |
-| 「ruff かけて」「コード整形して」 | Route to Gemini subagent |
-
-## Environment Setup / Diagnostics via Gemini
-
-Development environment initialization and health checks.
-
-### Scope
-
-- `uv sync`, `uv venv`, virtual environment setup
-- Tool version checks (`python --version`, `uv --version`, etc.)
-- Environment diagnostics and troubleshooting
-
-### How to Route
-
-```
-Task tool parameters:
-- subagent_type: "general-purpose"
-- prompt: |
-    Perform environment setup / diagnostics.
-
-    Task: {description}
-
-    Execute the necessary commands (uv sync, version checks, etc.).
-    If issues are found, consult Gemini for solutions:
-    gemini -p "{question about environment issue}" 2>/dev/null
-
-    Report environment status concisely.
-```
-
-### Triggers
-
-| User Input | Action |
-|------------|--------|
-| 「環境セットアップして」「uv sync して」 | Route to Gemini subagent |
-| 「環境を確認して」「バージョン確認して」 | Route to Gemini subagent |
-
-## Shell Script Generation via Gemini
-
-Creating and executing shell scripts.
-
-### Scope
-
-- Bash script creation for automation tasks
-- One-off shell commands (complex piping, loops, etc.)
-- Cron job setup
-
-### How to Route
-
-```
-Task tool parameters:
-- subagent_type: "general-purpose"
-- prompt: |
-    Generate and/or execute a shell script.
-
-    Task: {description}
-
-    Use Gemini to generate the script:
-    gemini -p "Write a bash script that: {requirement}" 2>/dev/null
-
-    Review the output, save if needed, and execute.
-    Report results back concisely.
-```
-
-### Triggers
-
-| User Input | Action |
-|------------|--------|
-| 「スクリプト書いて」「シェルスクリプト作って」 | Route to Gemini subagent |
-| 「自動化して」「バッチ処理作って」 | Route to Gemini subagent |
-
-## File Organization via Gemini
-
-Bulk file operations and directory restructuring.
-
-### Scope
-
-- Bulk file rename (pattern-based)
-- Directory restructuring / cleanup
-- File moving and organizing by convention
-
-### How to Route
-
-```
-Task tool parameters:
-- subagent_type: "general-purpose"
-- prompt: |
-    Perform file organization task.
-
-    Task: {description}
-
-    Plan the operations first (list what will be moved/renamed).
-    Execute using bash commands (mv, mkdir, etc.).
-    Report what was changed concisely.
-```
-
-### Exceptions (Claude handles directly)
-
-- Editing file contents (Claude's Edit/Write tools)
-- Creating new source code files (Claude's domain)
-
-### Triggers
-
-| User Input | Action |
-|------------|--------|
-| 「ファイルを整理して」「リネームして」 | Route to Gemini subagent |
-| 「ディレクトリ構成を変えて」 | Route to Gemini subagent |
 
 ---
 
