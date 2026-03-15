@@ -28,8 +28,8 @@ You provide **research and analysis** that benefits from your 1M token context.
 
 | Task | Who Does It |
 |------|-------------|
-| Design decisions | Codex |
-| Debugging | Codex |
+| Design decisions | OpenCode |
+| Debugging | OpenCode |
 | Code implementation | Claude Code |
 | File editing | Claude Code |
 
@@ -46,7 +46,7 @@ You can read and **write to** project context:
 ```
 
 **Save your research to `.claude/docs/research/{topic}.md`**
-This allows Claude Code and Codex to reference your findings.
+This allows Claude Code and OpenCode to reference your findings.
 
 ## How You're Called
 
@@ -72,8 +72,8 @@ Structure your response for Claude Code to use:
 ## Sources
 {Links to documentation, examples}
 
-## For Codex Review (if design-related)
-{Questions or decisions that need Codex's deep analysis}
+## For OpenCode Review (if design-related)
+{Questions or decisions that need OpenCode's deep analysis}
 ```
 
 ## Language Protocol
@@ -89,11 +89,11 @@ Structure your response for Claude Code to use:
 2. **Cite sources** — Include URLs and references
 3. **Be actionable** — Focus on what Claude Code can use
 4. **Save findings** — Write to `.claude/docs/research/` for persistence
-5. **Flag for Codex** — If you find design decisions needed, note them
+5. **Flag for OpenCode** — If you find design decisions needed, note them
 
 ## CLI Logs
 
-Codex/Gemini への入出力は `.claude/logs/cli-tools.jsonl` に記録されています。
+OpenCode/Gemini への入出力は `.claude/logs/cli-tools.jsonl` に記録されています。
 過去の相談内容を確認する場合は、このログを参照してください。
 
 `/checkpointing` 実行後、下記に Session History が追記されます。

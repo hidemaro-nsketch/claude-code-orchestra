@@ -7,7 +7,7 @@ description: ALWAYS activate this skill at the start of every task. Load project
 
 ## Purpose
 
-Load shared project context from `.claude/` directory to ensure Codex CLI has the same knowledge as Claude Code.
+Load shared project context from `.claude/` directory to ensure OpenCode CLI has the same knowledge as Claude Code.
 
 ## When to Activate
 
@@ -26,7 +26,7 @@ Read all files in `.claude/rules/`:
 ├── language.md            # Think in English, respond in Japanese
 ├── security.md            # Secrets, validation, SQLi/XSS prevention
 ├── testing.md             # TDD, AAA pattern, 80% coverage
-└── codex-delegation.md    # (skip - not relevant for Codex itself)
+└── opencode-delegation.md # (skip - not relevant for OpenCode itself)
 ```
 
 ### Step 2: Load Design Documentation

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PostToolUse hook: Suggest Codex review after significant implementations.
+PostToolUse hook: Suggest OpenCode review after significant implementations.
 
 Tracks file changes and suggests code review when substantial
 code has been written.
@@ -98,7 +98,10 @@ def main():
             sys.exit(0)
 
         # Skip non-source files
-        if not any(file_path.endswith(ext) for ext in [".py", ".ts", ".js", ".tsx", ".jsx", ".go", ".rs"]):
+        if not any(
+            file_path.endswith(ext)
+            for ext in [".py", ".ts", ".js", ".tsx", ".jsx", ".go", ".rs"]
+        ):
             sys.exit(0)
 
         # Load and update state
@@ -120,10 +123,10 @@ def main():
                     "hookEventName": "PostToolUse",
                     "additionalContext": (
                         f"[Code Review Suggestion] {reason} in this session. "
-                        "Consider having Codex review the implementation. "
+                        "Consider having OpenCode review the implementation. "
                         "**Recommended**: Use Task tool with subagent_type='general-purpose' "
-                        "to consult Codex with git diff and preserve main context."
-                    )
+                        "to consult OpenCode with git diff and preserve main context."
+                    ),
                 }
             }
             print(json.dumps(output))

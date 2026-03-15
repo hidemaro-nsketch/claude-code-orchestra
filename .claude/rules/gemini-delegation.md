@@ -10,7 +10,7 @@
 | ライブラリ調査 | Gemini（外部Web検索） |
 | 最新ドキュメント検索 | Gemini（Google Search） |
 | マルチモーダル | Gemini |
-| 設計判断 | Codex |
+| 設計判断 | OpenCode |
 
 ## Context Management
 
@@ -30,9 +30,9 @@ Gemini CLI excels at:
 - **Multimodal processing** — Video, audio, PDF analysis
 - **Web research** — Library comparison, best practices, API specs
 
-**Gemini does NOT excel at** (use Claude/Codex instead):
-- Design decisions (Codex)
-- Debugging (Codex)
+**Gemini does NOT excel at** (use Claude/OpenCode instead):
+- Design decisions (OpenCode)
+- Debugging (OpenCode)
 - Code implementation (Claude)
 
 ## Adaptive Execution
@@ -75,8 +75,8 @@ Consult Gemini when **external information is actually needed**:
 
 Skip Gemini for:
 
-- Design decisions → Codex
-- Debugging → Codex
+- Design decisions → OpenCode
+- Debugging → OpenCode
 - Code implementation → Claude
 - Simple file operations → Claude
 

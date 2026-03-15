@@ -52,7 +52,7 @@ Any of the following automatically escalates to L:
 |------|---------------------|---------------------------|----------------|
 | **XS** | Skip /startproject entirely | - | - |
 | **S** | Codebase read + brief | Skip (no Agent Teams) | Simple task list |
-| **M** | Codebase read + brief | Codex subagent only (no team) | Task list + design |
+| **M** | Codebase read + brief | OpenCode subagent only (no team) | Task list + design |
 | **L** | Full codebase analysis | Agent Teams (Researcher + Architect) | Full plan |
 
 ### /team-implement
@@ -82,9 +82,9 @@ Any of the following automatically escalates to L:
 | **M** | Only if task involves unknown libraries or external APIs |
 | **L** | Standard (Researcher teammate or subagent) |
 
-### Codex Design Consultation
+### OpenCode Design Consultation
 
-| Tier | Codex Usage |
+| Tier | OpenCode Usage |
 |------|------------|
 | **XS** | Never |
 | **S** | Only if debugging a non-obvious issue |
@@ -112,7 +112,7 @@ Tasks can escalate upward during execution (never downward).
 
 Escalation is **additive** — add resources for the new tier without restarting:
 
-- S → M: Add Codex consultation for open design questions
+- S → M: Add OpenCode consultation for open design questions
 - M → L: Spawn additional teammates for uncovered modules
 - Never restart completed work
 

@@ -42,11 +42,11 @@
 | 5 | update-design | - | - | - | `.claude/docs/DESIGN.md` | 1 |
 | 6 | research-lib | - | - | - | `.claude/docs/libraries/` | 2 |
 | 7 | update-lib-docs | - | - | - | `.claude/docs/libraries/` | 2 |
-| 8 | codex-system | Codex CLI | - | codex-delegation.md | `.claude/logs/` | 3 |
+| 8 | opencode-system | OpenCode CLI | - | opencode-delegation.md | `.claude/logs/` | 3 |
 | 9 | gemini-system | Gemini CLI | - | gemini-delegation.md | `.claude/docs/research/` | 3 |
-| 10 | startproject | Codex + Gemini | Required | 両方の delegation.md | 複数 | 4 |
+| 10 | startproject | OpenCode + Gemini | Required | 両方の delegation.md | 複数 | 4 |
 | 11 | team-implement | - | Required | - | - | 4 |
-| 12 | team-review | Codex CLI | Required | security.md, coding-principles.md, testing.md | `.claude/docs/research/` | 4 |
+| 12 | team-review | OpenCode CLI | Required | security.md, coding-principles.md, testing.md | `.claude/docs/research/` | 4 |
 | 13 | checkpointing | - | - | - | `.claude/logs/`, `.claude/checkpoints/` | 5 |
 | 14 | init | - | - | - | - | 5 |
 
@@ -64,7 +64,7 @@
 | `.claude/rules/coding-principles.md` | コーディング原則 | そのまま使える |
 | `.claude/rules/testing.md` | テストルール | テストフレームワークに合わせて調整 |
 | `.claude/rules/security.md` | セキュリティルール | そのまま使える |
-| `.claude/rules/codex-delegation.md` | Codex委譲ルール | Phase 3 で移行 |
+| `.claude/rules/opencode-delegation.md` | OpenCode委譲ルール | Phase 3 で移行 |
 | `.claude/rules/gemini-delegation.md` | Gemini委譲ルール | Phase 3 で移行 |
 
 > **注**: `dev-environment.md` は移行しない。移行先リポジトリ固有のツールチェイン設定は各プロジェクトで個別に管理する。
@@ -209,37 +209,37 @@
 
 ## Phase 3: 外部CLI連携スキル
 
-**目的**: Codex CLI / Gemini CLI との連携スキルを移行する。
+**目的**: OpenCode CLI / Gemini CLI との連携スキルを移行する。
 
 ### 前提条件
 
-- **Codex CLI** がインストール・認証済み
+- **OpenCode CLI** がインストール・認証済み
 - **Gemini CLI** がインストール・認証済み
 
 ```bash
 # インストール確認
-codex --version
+opencode --version
 gemini --version
 
 # 動作確認
-codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "Say hello" 2>/dev/null
+opencode run -m github-copilot/gpt-5.4 "Say hello" 2>/dev/null
 gemini -p "Say hello" 2>/dev/null
 ```
 
-### 3-1. codex-system
+### 3-1. opencode-system
 
 | 項目 | 内容 |
 |------|------|
-| ファイル | `.claude/skills/codex-system/SKILL.md` + `references/` 配下5ファイル |
-| 依存 | Codex CLI、`.claude/rules/codex-delegation.md` |
+| ファイル | `.claude/skills/opencode-system/SKILL.md` + `references/` 配下5ファイル |
+| 依存 | OpenCode CLI、`.claude/rules/opencode-delegation.md` |
 | 移行難易度 | 中 |
 | 移行時の変更 | ルールファイルのパスは変更不要（相対的に参照される） |
 
 **作業**:
-1. `.claude/rules/codex-delegation.md` をコピー
-2. `.claude/skills/codex-system/` ディレクトリごとコピー（SKILL.md + references/）
-3. `CLAUDE.md` に Codex 連携の記述を追加
-4. 動作確認: 設計相談や「考えて」で Codex が呼ばれるか確認
+1. `.claude/rules/opencode-delegation.md` をコピー
+2. `.claude/skills/opencode-system/` ディレクトリごとコピー（SKILL.md + references/）
+3. `CLAUDE.md` に OpenCode 連携の記述を追加
+4. 動作確認: 設計相談や「考えて」で OpenCode が呼ばれるか確認
 
 ### 3-2. gemini-system
 
@@ -248,7 +248,7 @@ gemini -p "Say hello" 2>/dev/null
 | ファイル | `.claude/skills/gemini-system/SKILL.md` + `references/` 配下2ファイル |
 | 依存 | Gemini CLI、`.claude/rules/gemini-delegation.md` |
 | 移行難易度 | 中 |
-| 移行時の変更 | コードベース分析をGeminiに委譲しないよう注意（SKILL.mdに既に記載済み） |
+| 移行時の変更 | コードベース分析をGeminiに委譲しないよう注意（SKILL.mdに既に記載済み）|
 
 **作業**:
 1. `.claude/rules/gemini-delegation.md` をコピー
@@ -259,9 +259,9 @@ gemini -p "Say hello" 2>/dev/null
 
 ### Phase 3 完了チェックリスト
 
-- [ ] Codex CLI / Gemini CLI がインストール・認証済み
-- [ ] `/codex-system` で設計相談ができる
-- [ ] 「考えて」「分析して」でプロアクティブに Codex が呼ばれる
+- [ ] OpenCode CLI / Gemini CLI がインストール・認証済み
+- [ ] `/opencode-system` で設計相談ができる
+- [ ] 「考えて」「分析して」でプロアクティブに OpenCode が呼ばれる
 - [ ] `/gemini-system` で外部リサーチができる
 - [ ] 「調べて」「リサーチして」でプロアクティブに Gemini が呼ばれる
 - [ ] 調査結果が `.claude/docs/research/` に保存される
@@ -274,7 +274,7 @@ gemini -p "Say hello" 2>/dev/null
 
 ### 前提条件
 
-- Phase 3 が完了していること（Codex/Gemini が使える状態）
+- Phase 3 が完了していること（OpenCode/Gemini が使える状態）
 - Claude Code が Agent Teams 機能をサポートしていること（Opus 4.6）
 
 ### 4-1. startproject
@@ -282,7 +282,7 @@ gemini -p "Say hello" 2>/dev/null
 | 項目 | 内容 |
 |------|------|
 | ファイル | `.claude/skills/startproject/SKILL.md` + `references/task-patterns.md` |
-| 依存 | Codex CLI、Gemini CLI、Agent Teams、Phase 1-3 の全スキル |
+| 依存 | OpenCode CLI、Gemini CLI、Agent Teams、Phase 1-3 の全スキル |
 | 移行難易度 | 高 |
 | 移行時の変更 | `CLAUDE.md` のワークフロー記述を移行先に合わせて調整 |
 
@@ -313,7 +313,7 @@ gemini -p "Say hello" 2>/dev/null
 | 項目 | 内容 |
 |------|------|
 | ファイル | `.claude/skills/team-review/SKILL.md` |
-| 依存 | Agent Teams、Codex CLI、`.claude/rules/security.md`, `coding-principles.md`, `testing.md` |
+| 依存 | Agent Teams、OpenCode CLI、`.claude/rules/security.md`, `coding-principles.md`, `testing.md` |
 | 移行難易度 | 高 |
 | 移行時の変更 | テスト/カバレッジコマンドを移行先に合わせて調整 |
 
@@ -322,14 +322,14 @@ gemini -p "Say hello" 2>/dev/null
 2. テスト/カバレッジコマンドを移行先のツールに合わせて調整
 3. 動作確認: 実装後に `/team-review` を実行
    - Security Reviewer が起動するか
-   - Quality Reviewer（Codex連携）が起動するか
+   - Quality Reviewer（OpenCode連携）が起動するか
    - Test Reviewer が起動するか
 
 ### Phase 4 完了チェックリスト
 
 - [ ] `/startproject` → `/team-implement` → `/team-review` のフルフローが動作する
 - [ ] Agent Teams でチームメイトが正しく起動する
-- [ ] Researcher（Gemini）と Architect（Codex）が双方向通信する
+- [ ] Researcher（Gemini）と Architect（OpenCode）が双方向通信する
 - [ ] 並列実装でファイル競合が発生しない
 - [ ] レビュー結果が `.claude/docs/research/` に保存される
 
@@ -417,7 +417,7 @@ gemini -p "Say hello" 2>/dev/null
 | Agent | Strength | Use For |
 |-------|----------|---------|
 | Claude Code | 1Mコンテキスト、オーケストレーション | 全体統括、コードベース分析 |
-| Codex CLI | 深い推論、設計判断 | 設計相談、エラー分析 |
+| OpenCode CLI | 深い推論、設計判断 | 設計相談、エラー分析 |
 | Gemini CLI | Google Search、マルチモーダル | 外部情報取得、ライブラリ調査 |
 
 （Documentation テーブルに追加）

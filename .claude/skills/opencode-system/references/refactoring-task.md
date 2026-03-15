@@ -1,6 +1,6 @@
-# Refactoring Task for Codex
+# Refactoring Task for OpenCode
 
-When delegating refactoring to Codex, use this prompt template.
+When delegating refactoring to OpenCode, use this prompt template.
 
 ## Prompt Template
 
@@ -62,7 +62,7 @@ Provide:
 ## Example Invocation
 
 ```bash
-codex exec --model gpt-5.3-codex --sandbox workspace-write --full-auto "
+opencode run -m github-copilot/gpt-5.4 "
 Refactor this code for simplicity:
 
 ## Target Code

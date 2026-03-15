@@ -3,7 +3,7 @@
 Multi-Agent AI Development Environment
 
 ```
-Claude Code (Orchestrator) ─┬─ Codex CLI (Deep Reasoning)
+Claude Code (Orchestrator) ─┬─ OpenCode CLI (Deep Reasoning)
                             ├─ Gemini CLI (Research)
                             └─ Subagents (Parallel Tasks)
 ```
@@ -22,11 +22,11 @@ npm install -g @anthropic-ai/claude-code
 claude login
 ```
 
-### Codex CLI
+### OpenCode CLI
 
 ```bash
-npm install -g @openai/codex
-codex login
+npm install -g @anthropic-ai/opencode
+opencode login
 ```
 
 ### Gemini CLI
@@ -69,11 +69,11 @@ gemini login
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │              Subagent (general-purpose)                 │  │
 │  │              → Tool Routing: git/lint/docker 等を委託   │  │
-│  │              → Codex/Gemini を呼び出し可能              │  │
+│  │              → OpenCode/Gemini を呼び出し可能            │  │
 │  │              → 結果を要約してメインに返す               │  │
 │  │                                                        │  │
 │  │   ┌──────────────┐        ┌──────────────┐            │  │
-│  │   │  Codex CLI   │        │  Gemini CLI  │            │  │
+│  │   │ OpenCode CLI │        │  Gemini CLI  │            │  │
 │  │   │  設計・推論  │        │  リサーチ    │            │  │
 │  │   │  デバッグ    │        │  マルチモーダル│           │  │
 │  │   └──────────────┘        └──────────────┘            │  │
@@ -99,7 +99,7 @@ Git / Docker / Lint 等の操作は Claude が直接実行せず、Gemini サブ
 | docker build/run | Gemini サブエージェント |
 | GitHub/Linear MCP | Gemini が計画 → Claude MCP で実行 |
 | コードベース分析 | Gemini サブエージェント |
-| 設計判断 | Codex |
+| 設計判断 | OpenCode |
 | 外部リサーチ | Gemini |
 
 → 詳細: `.claude/rules/tool-routing.md`
@@ -120,7 +120,7 @@ Git / Docker / Lint 等の操作は Claude が直接実行せず、Gemini サブ
 │   │
 │   ├── agents/                  # カスタムエージェント定義
 │   │   ├── general-purpose.md   # 汎用サブエージェント
-│   │   ├── codex-debugger.md    # エラー分析エージェント
+│   │   ├── opencode-debugger.md  # エラー分析エージェント
 │   │   └── gemini-explore.md    # コードベース探索エージェント
 │   │
 │   ├── skills/                  # 再利用可能なワークフロー
@@ -131,7 +131,7 @@ Git / Docker / Lint 等の操作は Claude が直接実行せず、Gemini サブ
 │   │   ├── plan/                # 実装計画作成
 │   │   ├── tdd/                 # テスト駆動開発
 │   │   ├── checkpointing/       # セッション永続化
-│   │   ├── codex-system/        # Codex CLI連携
+│   │   ├── opencode-system/     # OpenCode CLI連携
 │   │   ├── gemini-system/       # Gemini CLI連携
 │   │   ├── simplify/            # コードリファクタリング
 │   │   ├── design-tracker/      # 設計決定追跡
@@ -143,9 +143,9 @@ Git / Docker / Lint 等の操作は Claude が直接実行せず、Gemini サブ
 │   │   ├── enforce-tool-routing.py  # ツールルーティング強制
 │   │   ├── agent-router.py          # エージェントルーティング提案
 │   │   ├── lint-on-save.py          # 保存時自動lint
-│   │   ├── check-codex-before-write.py  # 書き込み前Codex相談
-│   │   ├── check-codex-after-plan.py    # 計画後Codex相談
-│   │   ├── error-to-codex.py        # エラー時Codex分析
+│   │   ├── check-opencode-before-write.py  # 書き込み前OpenCode相談
+│   │   ├── check-opencode-after-plan.py    # 計画後OpenCode相談
+│   │   ├── error-to-opencode.py        # エラー時OpenCode分析
 │   │   ├── post-implementation-review.py  # 実装後レビュー
 │   │   ├── post-test-analysis.py    # テスト後分析
 │   │   ├── suggest-gemini-research.py   # Geminiリサーチ提案
@@ -153,7 +153,7 @@ Git / Docker / Lint 等の操作は Claude が直接実行せず、Gemini サブ
 │   │
 │   ├── rules/                   # 開発ガイドライン
 │   │   ├── tool-routing.md      # ツールルーティングルール
-│   │   ├── codex-delegation.md  # Codex委託ルール
+│   │   ├── opencode-delegation.md  # OpenCode委託ルール
 │   │   ├── gemini-delegation.md # Gemini委託ルール
 │   │   ├── coding-principles.md # コーディング原則
 │   │   ├── dev-environment.md   # 開発環境
@@ -167,9 +167,9 @@ Git / Docker / Lint 等の操作は Claude が直接実行せず、Gemini サブ
 │   │   └── libraries/           # ライブラリ制約
 │   │
 │   └── logs/
-│       └── cli-tools.jsonl      # Codex/Gemini入出力ログ
+│       └── cli-tools.jsonl      # OpenCode/Gemini入出力ログ
 │
-├── .codex/                      # Codex CLI設定
+├── .opencode/                   # OpenCode CLI設定
 │   ├── AGENTS.md
 │   ├── config.toml
 │   └── skills/
@@ -196,7 +196,7 @@ Git / Docker / Lint 等の操作は Claude が直接実行せず、Gemini サブ
 **ワークフロー:**
 1. **Gemini** → リポジトリ分析・事前調査
 2. **Claude** → 要件ヒアリング・計画作成
-3. **Codex** → 計画レビュー・リスク分析
+3. **OpenCode** → 計画レビュー・リスク分析
 4. **Claude** → タスクリスト作成
 
 
@@ -232,7 +232,7 @@ Step 1: Gather Diff
     ↓
 Step 2: Spawn Review Team (4人並列)
   ├── Security Reviewer   → 脆弱性・認証・入力検証
-  ├── Quality Reviewer    → コード品質・命名・パターン (Codex活用)
+  ├── Quality Reviewer    → コード品質・命名・パターン (OpenCode活用)
   ├── Test Reviewer       → カバレッジ・テスト品質
   └── Simplify Reviewer   → 構造的複雑性・リファクタリング候補
     ↓
@@ -311,10 +311,10 @@ uv run ruff check .
 
 | フック | トリガー | 動作 |
 |--------|----------|------|
-| `agent-router.py` | ユーザー入力 | Codex/Geminiへのルーティング提案 |
+| `agent-router.py` | ユーザー入力 | OpenCode/Geminiへのルーティング提案 |
 | `lint-on-save.py` | ファイル保存 | 自動lint実行 |
-| `check-codex-before-write.py` | ファイル書き込み前 | Codex相談提案 |
-| `log-cli-tools.py` | Codex/Gemini実行 | 入出力ログ記録 |
+| `check-opencode-before-write.py` | ファイル書き込み前 | OpenCode相談提案 |
+| `log-cli-tools.py` | OpenCode/Gemini実行 | 入出力ログ記録 |
 
 ## Language Rules
 
@@ -341,7 +341,7 @@ python scripts/migrate-skills.py
 | **0** | Foundation Rules | 基本ルール（言語・コーディング・テスト・セキュリティ）+ lint-on-save フック | 5 |
 | **1** | Standalone Skills | 外部 CLI 不要のスキル（plan, tdd, simplify, design-tracker, update-design）| 5 |
 | **2** | Documentation Skills | ライブラリ調査・ドキュメント管理スキル | 2 |
-| **3** | External CLI Integration | Codex CLI + Gemini CLI 連携（スキル・ルール・フック・エージェント定義）| 20+ |
+| **3** | External CLI Integration | OpenCode CLI + Gemini CLI 連携（スキル・ルール・フック・エージェント定義）| 20+ |
 | **4** | Agent Teams | 並列ワークフロー（startproject, team-implement, team-review, deploy）| 5 |
 | **5** | Session Management | チェックポイント・プロジェクト初期化 | 3 |
 

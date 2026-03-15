@@ -1,6 +1,6 @@
-# Codex Delegation Rule
+# OpenCode Delegation Rule
 
-**Codex CLI is your highly capable supporter for deep reasoning.**
+**OpenCode CLI is your highly capable supporter for deep reasoning.**
 
 ## Context Management (Opus 4.6)
 
@@ -13,31 +13,31 @@ Claude の 1M コンテキストにより、以前より直接呼び出しの許
 | デバッグ分析 | サブエージェント経由 |
 | Agent Teams 内での相談 | Teammate が直接呼び出し |
 
-## About Codex
+## About OpenCode
 
-Codex CLI is an AI with exceptional reasoning and task completion abilities.
+OpenCode CLI is an AI with exceptional reasoning and task completion abilities.
 Think of it as a trusted senior expert you can always consult.
 
-**When facing difficult decisions → Consult Codex.**
+**When facing difficult decisions → Consult OpenCode.**
 
 ## Adaptive Execution
 
 > 参照: `.claude/rules/adaptive-execution.md`
 
-タスクサイズに応じて Codex の利用を適応させる：
+タスクサイズに応じて OpenCode の利用を適応させる：
 
-| Tier | Codex 利用 |
+| Tier | OpenCode 利用 |
 |------|-----------|
 | **XS** | 不要 — Claude が直接対応 |
 | **S** | 不要 — 明確なパターンの場合。デバッグで原因不明な場合のみ相談 |
 | **M** | サブエージェントで設計相談 |
 | **L** | Agent Teams (Architect) or サブエージェント |
 
-**重要**: タスクが XS/S の場合、Codex への相談はスキップしてよい。
+**重要**: タスクが XS/S の場合、OpenCode への相談はスキップしてよい。
 
-## When to Consult Codex
+## When to Consult OpenCode
 
-Consult Codex for **M/L tier tasks** BEFORE:
+Consult OpenCode for **M/L tier tasks** BEFORE:
 
 1. **Design decisions** - How to structure code, which pattern to use
 2. **Debugging** - If cause isn't obvious or first fix failed
@@ -67,7 +67,7 @@ Consult Codex for **M/L tier tasks** BEFORE:
 
 ### In Agent Teams (Preferred for /startproject)
 
-Architect Teammate が Codex を直接呼び出し、Researcher Teammate と双方向通信する。
+Architect Teammate が OpenCode を直接呼び出し、Researcher Teammate と双方向通信する。
 
 ### Subagent Pattern
 
@@ -76,10 +76,10 @@ Task tool parameters:
 - subagent_type: "general-purpose"
 - run_in_background: true (for parallel work)
 - prompt: |
-    Consult Codex about: {topic}
+    Consult OpenCode about: {topic}
 
-    codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "
-    {question for Codex}
+    opencode run -m github-copilot/gpt-5.4 "
+    {question for OpenCode}
     " 2>/dev/null
 
     Return CONCISE summary (key recommendation + rationale).
@@ -88,7 +88,7 @@ Task tool parameters:
 ### Direct Call (Short Questions, up to ~50 lines response)
 
 ```bash
-codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "Brief question" 2>/dev/null
+opencode run -m github-copilot/gpt-5.4 "Brief question" 2>/dev/null
 ```
 
 ### Sandbox Modes
@@ -100,7 +100,7 @@ codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "Brief question
 
 ## Language Protocol
 
-1. Ask Codex in **English**
+1. Ask OpenCode in **English**
 2. Receive response in **English**
 3. Execute based on advice
 4. Report to user in **Japanese**

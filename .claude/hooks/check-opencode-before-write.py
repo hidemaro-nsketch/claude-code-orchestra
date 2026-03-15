@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
-PreToolUse hook: Check if Codex consultation is recommended before Write/Edit.
+PreToolUse hook: Check if OpenCode consultation is recommended before Write/Edit.
 
-This hook analyzes the file being modified and suggests Codex consultation
+This hook analyzes the file being modified and suggests OpenCode consultation
 for design decisions, complex implementations, or architectural changes.
 """
 
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -44,7 +43,6 @@ DESIGN_INDICATORS = [
     "/core/",
     "config",
     "settings",
-
     # Code patterns in content
     "class ",
     "interface ",
@@ -68,8 +66,10 @@ SIMPLE_EDIT_PATTERNS = [
 ]
 
 
-def should_suggest_codex(file_path: str, content: str | None = None) -> tuple[bool, str]:
-    """Determine if Codex consultation should be suggested."""
+def should_suggest_opencode(
+    file_path: str, content: str | None = None
+) -> tuple[bool, str]:
+    """Determine if OpenCode consultation should be suggested."""
     path = Path(file_path)
     filename = path.name.lower()
     filepath_lower = file_path.lower()
@@ -93,7 +93,10 @@ def should_suggest_codex(file_path: str, content: str | None = None) -> tuple[bo
         # Check for design patterns in content
         for indicator in DESIGN_INDICATORS:
             if indicator in content:
-                return True, f"Content contains '{indicator}' - likely architectural code"
+                return (
+                    True,
+                    f"Content contains '{indicator}' - likely architectural code",
+                )
 
     # New files in src/ directory
     if "/src/" in file_path or file_path.startswith("src/"):
@@ -114,7 +117,7 @@ def main():
         if not validate_input(file_path, content):
             sys.exit(0)
 
-        should_suggest, reason = should_suggest_codex(file_path, content)
+        should_suggest, reason = should_suggest_opencode(file_path, content)
 
         if should_suggest:
             # Return additional context to Claude
@@ -122,13 +125,13 @@ def main():
                 "hookSpecificOutput": {
                     "hookEventName": "PreToolUse",
                     "additionalContext": (
-                        f"[Codex Consultation Reminder] {reason}. "
-                        "Consider consulting Codex before making this change. "
+                        f"[OpenCode Consultation Reminder] {reason}. "
+                        "Consider consulting OpenCode before making this change. "
                         "**Recommended**: Use Task tool with subagent_type='general-purpose' "
                         "to preserve main context. "
                         "(Direct call OK for quick questions: "
-                        "`codex exec --model gpt-5.3-codex --sandbox read-only --full-auto '...'`)"
-                    )
+                        "`opencode run -m github-copilot/gpt-5.4 '...'`)"
+                    ),
                 }
             }
             print(json.dumps(output))

@@ -1,24 +1,24 @@
 # トラブルシューティング
 
-## Codex CLI が見つからない
+## OpenCode CLI が見つからない
 
 ```bash
 # 確認
-which codex
-codex --version
+which opencode
+opencode --version
 
 # インストール
-npm install -g @openai/codex
+npm install -g @anthropic-ai/opencode
 ```
 
 ## 認証エラー
 
 ```bash
 # 再認証
-codex login
+opencode login
 
 # ステータス確認
-codex login status
+opencode login status
 ```
 
 ## タイムアウト
@@ -32,7 +32,7 @@ codex login status
 
 config.toml で設定:
 ```toml
-[mcp_servers.codex]
+[mcp_servers.opencode]
 tool_timeout_sec = 600
 ```
 
@@ -40,14 +40,14 @@ tool_timeout_sec = 600
 
 ```bash
 # Git 管理外で実行する場合
-codex exec --skip-git-repo-check ...
+opencode run --skip-git-repo-check ...
 ```
 
 ## reasoning 出力が多すぎる
 
 ```bash
 # stderr 抑制
-codex exec ... 2>/dev/null
+opencode run ... 2>/dev/null
 
 # または config.toml で
 hide_agent_reasoning = true
@@ -57,10 +57,10 @@ hide_agent_reasoning = true
 
 ```bash
 # 最近のセッション一覧
-codex sessions list
+opencode sessions list
 
 # 特定セッションの詳細
-codex sessions show {SESSION_ID}
+opencode sessions show {SESSION_ID}
 ```
 
 ## sandbox 権限エラー

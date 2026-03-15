@@ -5,7 +5,7 @@
 
 ## Overview
 
-Claude Code Orchestra is a multi-agent collaboration framework that orchestrates Claude Code (1M context), Codex CLI (deep reasoning), and Gemini CLI (external research + multimodal) to accelerate development. With Opus 4.6, the framework leverages Agent Teams for parallel work.
+Claude Code Orchestra is a multi-agent collaboration framework that orchestrates Claude Code (1M context), OpenCode CLI (deep reasoning), and Gemini CLI (external research + multimodal) to accelerate development. With Opus 4.6, the framework leverages Agent Teams for parallel work.
 
 ## Architecture
 
@@ -18,13 +18,13 @@ Claude Code Orchestra is a multi-agent collaboration framework that orchestrates
 │  │ Agent Teams           │  │ Subagents             │             │
 │  │ (parallel + comms)    │  │ (isolated + results)  │             │
 │  │                       │  │                       │             │
-│  │ Researcher ←→ Archit. │  │ Codex consultation    │             │
+│  │ Researcher ←→ Archit. │  │ OpenCode consultation │             │
 │  │ Implementer A/B/C     │  │ Gemini research       │             │
 │  │ Security/Quality Rev. │  │ Error analysis        │             │
 │  └──────────────────────┘  └──────────────────────┘             │
 │                                                                   │
 │  External CLIs:                                                   │
-│  ├── Codex CLI (gpt-5.3-codex) — deep reasoning, design          │
+│  ├── OpenCode CLI (github-copilot/gpt-5.4) — deep reasoning, design │
 │  └── Gemini CLI (gemini-3-pro) — web search, multimodal          │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -36,7 +36,7 @@ Claude Code Orchestra is a multi-agent collaboration framework that orchestrates
 | Pattern | Purpose | Notes |
 |---------|---------|-------|
 | Agent Teams | Parallel work with inter-agent communication | /startproject, /team-implement, /team-review |
-| Subagents | Isolated tasks returning results | Codex/Gemini consultation when teams not needed |
+| Subagents | Isolated tasks returning results | OpenCode/Gemini consultation when teams not needed |
 | Skill Pipeline | `/startproject` → `/team-implement` → `/team-review` | Separation of concerns across skills |
 | Decision Journal | Consistent cross-phase decision logging | Local append-only canonical log + Linear mirror sync |
 
@@ -55,7 +55,7 @@ Classification is hybrid: file count + complexity + risk/novelty. Runtime escala
 
 | Library | Role | Version | Notes |
 |---------|------|---------|-------|
-| Codex CLI | Deep reasoning partner | gpt-5.3-codex | Design, debug, trade-offs |
+| OpenCode CLI | Deep reasoning partner | github-copilot/gpt-5.4 | Design, debug, trade-offs |
 | Gemini CLI | External information + multimodal | gemini-3-pro | Web search, PDF/video/audio |
 
 ### Key Decisions
@@ -70,7 +70,7 @@ Classification is hybrid: file count + complexity + risk/novelty. Runtime escala
 | Subagent threshold relaxed to ~50 lines | 1M context can absorb more direct output | Keep 10-line threshold | 2026-02-08 |
 | Use pre/post checkpoints per phase with local-first dual-write | Keeps logs consistent across `/startproject`, `/team-implement`, `/team-review`, `/deploy` while minimizing external write overhead | Write Linear only (no local canonical log), per-phase separate log files | 2026-02-16 |
 | Hybrid MADR + Y-statements template approach | MADR forces "considered options" for local docs; Y-statements are concise for Linear comments | Pure MADR everywhere, pure Y-statements everywhere | 2026-02-16 |
-| Markdown format over JSONL for decision log | Human-readable, git-friendly diffs, no tooling needed; JSONL mirror can be added later if machine-queryable logs needed | JSONL (Codex recommendation) | 2026-02-16 |
+| Markdown format over JSONL for decision log | Human-readable, git-friendly diffs, no tooling needed; JSONL mirror can be added later if machine-queryable logs needed | JSONL (OpenCode recommendation) | 2026-02-16 |
 | 5-6 Linear comments per feature lifecycle | Reduces API noise while maintaining visibility; each comment is a coherent phase summary | Per-event comments (noisy), no comments (invisible) | 2026-02-16 |
 | Adaptive execution tiers (XS/S/M/L) added | Reduce over-orchestration on small tasks while preserving depth for large work | Single heavyweight workflow for all tasks | 2026-02-16 |
 | Task sizing should use hybrid signals | File count alone misses complexity and risk | File-count-only classification | 2026-02-16 |
@@ -78,7 +78,7 @@ Classification is hybrid: file count + complexity + risk/novelty. Runtime escala
 
 ## TODO
 
-- [ ] Update gemini-system and codex-system skills to match new delegation rules
+- [ ] Update gemini-system and opencode-system skills to match new delegation rules
 - [ ] Test Agent Teams workflow end-to-end with a real project
 - [ ] Evaluate if gemini-explore agent should be removed or repurposed
 - [ ] Update hooks for Agent Teams quality gates
@@ -353,7 +353,7 @@ When Lead makes intervention decisions during monitoring, append DECISION entrie
 Triggers for recording:
 - File ownership reassignment
 - Teammate re-instruction
-- Technical problem resolution (especially Codex consultations)
+- Technical problem resolution (especially OpenCode consultations)
 - Scope changes during implementation
 ```
 
@@ -516,7 +516,7 @@ Append to `.claude/docs/decisions/log-{feature}.md`:
 | Japanese Linear comments | Matches team language protocol for external tools |
 | PRE/DECISION/POST pattern | Consistent across all 4 phases, minimal cognitive overhead |
 
-> **Note on JSONL vs Markdown**: Codex recommended JSONL for machine-readability.
+> **Note on JSONL vs Markdown**: OpenCode recommended JSONL for machine-readability.
 > We chose Markdown because: (1) these logs are primarily human-consumed, (2) they
 > live in a git repo where Markdown diffs are natural, (3) no tooling exists yet to
 > query JSONL logs. If machine-queryable logs become needed, a JSONL mirror can be
