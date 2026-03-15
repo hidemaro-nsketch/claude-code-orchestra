@@ -42,7 +42,7 @@ Step 5: デプロイ情報を記録・投稿
 | 記録アクション | 発生箇所 |
 |---------------|---------|
 | Linear にデプロイ情報コメント | Step 5-1 |
-| `log-{feature}.md` POST エントリ | Step 5-2 |
+| タスクファイルの Decision Log セクション | Step 5-2 |
 
 > **Linear タスクIDが無い場合**: ユーザーに確認する。「Linear タスクIDが見つかりません。IDを指定しますか？スキップしますか？」と質問し、指示に従う。**暗黙的なスキップは禁止。**
 
@@ -157,11 +157,14 @@ git コマンドでブランチ・コミット情報を取得し、Linear タス
 
 > git コマンドで情報取得（`context: fork` で直接実行）、Linear MCP でコメント投稿。
 
-### 5-2. [MUST] ローカルログに POST エントリ追記
+### 5-2. [MUST] タスクファイルを完了状態に更新 + Decision Log に POST エントリ追記
 
 **このサブステップは必須。スキップ不可。**
 
-`.claude/docs/decisions/log-{feature}.md` に POST エントリを追記:
+タスクファイル `.claude/docs/decisions/task-{id}-{feature}.md` を更新:
+
+1. frontmatter の `status: active` を `status: completed` に変更
+2. `## Decision Log` セクションに POST エントリを追記:
 
 ```markdown
 ### [deploy] POST — {date}
