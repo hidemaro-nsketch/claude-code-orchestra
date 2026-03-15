@@ -4,7 +4,7 @@ description: |
   Push the feature branch to remote, create a PR, and switch back to the original branch.
   Run after /team-review completes. Handles git push, PR creation, and branch cleanup.
 context: fork
-allowed-tools: Read, Write, Edit, Bash, Grep, Glob, AskUserQuestion, ToolSearch, mcp__linear-server__save_comment, mcp__linear-server__get_issue
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob, AskUserQuestion, ToolSearch, mcp__linear-server__save_comment, mcp__linear-server__get_issue, mcp__linear-server__save_issue, mcp__linear-server__list_issue_statuses
 metadata:
   short-description: Push feature branch, create PR, and return to original branch
 ---
@@ -32,7 +32,8 @@ Step 4: 元のブランチに戻る
   ↓
 Step 5: デプロイ情報を記録・投稿
   5-1. [MUST] Linear タスクにデプロイ情報をコメント
-  5-2. [MUST] ローカルログに POST エントリ追記
+  5-2. [MUST] Linear タスクのステータスを "In Review" に変更
+  5-3. [MUST] ローカルログに POST エントリ追記
 ```
 
 ### 記録ステップの適用範囲（MUST）
@@ -42,7 +43,8 @@ Step 5: デプロイ情報を記録・投稿
 | 記録アクション | 発生箇所 |
 |---------------|---------|
 | Linear にデプロイ情報コメント | Step 5-1 |
-| タスクファイルの Decision Log セクション | Step 5-2 |
+| Linear ステータスを "In Review" に変更 | Step 5-2 |
+| タスクファイルの Decision Log セクション | Step 5-3 |
 
 > **Linear タスクIDが無い場合**: ユーザーに確認する。「Linear タスクIDが見つかりません。IDを指定しますか？スキップしますか？」と質問し、指示に従う。**暗黙的なスキップは禁止。**
 
@@ -157,7 +159,22 @@ git コマンドでブランチ・コミット情報を取得し、Linear タス
 
 > git コマンドで情報取得（`context: fork` で直接実行）、Linear MCP でコメント投稿。
 
-### 5-2. [MUST] タスクファイルを完了状態に更新 + Decision Log に POST エントリ追記
+### 5-2. [MUST] Linear タスクのステータスを "In Review" に変更
+
+**このサブステップは必須。スキップ不可。**
+
+> **Linear タスクIDが無い場合**: Step 5-1 と同様、ユーザーに確認する。
+
+Linear コメント投稿後、タスクのステータスを "In Review" に変更する：
+
+```
+手順 1: list_issue_statuses でチームのステータス一覧を取得し、"In Review" の stateId を特定
+手順 2: save_issue でタスクのステータスを "In Review" に更新
+```
+
+> Step 5-1 の Linear コメントと合わせて実行する。コメント → ステータス変更の順序で行う。
+
+### 5-3. [MUST] タスクファイルを完了状態に更新 + Decision Log に POST エントリ追記
 
 **このサブステップは必須。スキップ不可。**
 
@@ -178,7 +195,7 @@ git コマンドでブランチ・コミット情報を取得し、Linear タス
 - コミット数: {commit_count}件
 - PR: {PR_URL}
 - レビュー状況: Critical/High 発見事項は解決済み
-- Linear: コメント投稿済み
+- Linear: コメント投稿済み、ステータス "In Review" に変更済み
 ```
 
 ---
@@ -191,7 +208,7 @@ git コマンドでブランチ・コミット情報を取得し、Linear タス
 - ブランチ: `feature/{feature-name}` → origin に push 済み
 - PR: {PR URL}
 - 現在のブランチ: `{original-branch}` に戻りました
-- Linear: コメント追加済み
+- Linear: コメント追加済み、ステータス "In Review" に変更済み
 
 ### 次のステップ
 - PR をレビュー・マージしてください
