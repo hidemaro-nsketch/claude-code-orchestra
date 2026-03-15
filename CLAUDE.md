@@ -124,13 +124,16 @@ Claude Code (Opus 4.6) のコンテキストは **1M トークン**（実質 **3
 /team-implement            Claude 直接 or Agent Teams（tier に応じて適応）
     ↓ 完了後
 /team-review               Claude 直接 or 並列レビュー（tier に応じて適応）
+    ↓ レビュー完了後（自動修正ループ含む）
+/deploy                    PR 作成 + push
 ```
 
 1. Claude がタスクサイズを判定（XS/S/M/L）→ ワークフローを適応
 2. Claude がユーザーと要件ヒアリング、コードベースを直接分析
 3. **M**: OpenCode サブエージェントで設計 / **L**: Agent Teams で調査・設計
 4. 承認後、`/team-implement` で実装（tier に応じた規模）
-5. `/team-review` でレビュー（tier に応じた規模）
+5. `/team-review` でレビュー（tier に応じた規模、Medium+ は自動修正ループ）
+6. `/deploy` で PR 作成・push（自動発火）
 
 → 詳細: `/startproject`, `/team-implement`, `/team-review` skills
 

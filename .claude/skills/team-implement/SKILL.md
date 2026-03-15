@@ -34,9 +34,10 @@ metadata:
 | **M** | Claude 直接 or 1-2 Teammate | 小規模チーム（任意） |
 | **L** | フル Agent Teams | モジュール別 Teammate + Tester |
 
-**XS/S の場合**: Step 0（設計記録 + Linear投稿）→ Step 1（ブランチ作成 + ログ記録）→ Claude が直接実装 → Step 5（検証 + サマリー保存 + Linear投稿）。Step 2-4 をスキップ。
-**M の場合**: Step 0（設計記録 + Linear投稿）→ Step 1 → Step 2 で判断（Claude 直接 or 小チーム）→ Step 5（検証 + サマリー保存 + Linear投稿）。
-**L の場合**: フルワークフロー（Step 0-5 すべて実行。各ステップの記録・投稿を含む）。
+**XS の場合**: Step 0（設計記録 + Linear投稿）→ Step 1（ブランチ作成 + ログ記録）→ Claude が直接実装 → Step 5（検証 + サマリー保存 + Linear投稿）→ Step 6（レビュー省略）。Step 2-4 をスキップ。
+**S の場合**: Step 0（設計記録 + Linear投稿）→ Step 1（ブランチ作成 + ログ記録）→ Claude が直接実装 → Step 5（検証 + サマリー保存 + Linear投稿）→ Step 6（`/team-review` 自動発火）。Step 2-4 をスキップ。
+**M の場合**: Step 0（設計記録 + Linear投稿）→ Step 1 → Step 2 で判断（Claude 直接 or 小チーム）→ Step 5（検証 + サマリー保存 + Linear投稿）→ Step 6（`/team-review` 自動発火）。
+**L の場合**: フルワークフロー（Step 0-6 すべて実行。各ステップの記録・投稿を含む）。
 
 ### 記録ステップの適用範囲（MUST）
 
@@ -54,6 +55,31 @@ metadata:
 | Linear に実装完了コメント | Step 5 | MUST | MUST | MUST | MUST |
 
 > **Linear タスクIDが無い場合**: ユーザーに確認する。「Linear タスクIDが見つかりません。Linear への投稿をスキップしますか？それともタスクIDを指定しますか？」と質問し、指示に従う。**暗黙的なスキップは禁止。**
+
+## Fix Mode（レビュー修正モード）
+
+**`/team-review` の自動修正ループ（Step 5）から呼び出された場合、以下のように動作を適応させる。**
+
+### 判定方法
+
+`.claude/docs/decisions/fix-tasks-{feature}.md` が存在する場合、Fix Mode として動作する。
+
+### Fix Mode の動作
+
+| ステップ | 通常モード | Fix Mode |
+|---------|-----------|----------|
+| **Step 0** | 設計記録 + Linear投稿 | スキップ（設計変更なし） |
+| **Step 1** | ブランチ作成 | スキップ（既存ブランチを使用） |
+| **Step 2** | タスク分析 + チーム設計 | `fix-tasks-{feature}.md` をタスクリストとして使用 |
+| **Step 3-4** | Teammate 起動 + モニタリング | Tier に応じて通常通り（修正タスクを実装） |
+| **Step 5** | 統合検証 + サマリー保存 | 通常通り（修正結果を検証） |
+| **Step 6** | `/team-review` 自動起動 | 通常通り（再レビューを自動起動） |
+
+### Fix Mode の特記事項
+
+- **コミットメッセージ**: `fix: {issue description} (review round {N})` 形式を使用
+- **Fix タスクファイル**: 修正完了後に `fix-tasks-{feature}.md` を削除する
+- **ログ記録**: `log-{feature}.md` に `[team-implement:fix] POST` エントリを追記
 
 ## Workflow (Full — Tier L)
 
@@ -82,6 +108,9 @@ Step 5: Integration & Verification
   5-2. [MUST] implementation-{feature}.md にサマリー保存
   5-3. [MUST] log-{feature}.md に POST エントリ追記
   5-4. [MUST] Linear に実装完了コメントを投稿
+    ↓
+Step 6: Auto-Continue to Review
+  6-1. Tier 判定に基づき /team-review を自動起動（XS はスキップ）
 ```
 
 ---
@@ -377,7 +406,7 @@ poe all
 - coverage: {N}%
 
 ### 次のステップ
-`/team-review` で並列レビューを実行してください
+実装が完了しました。続けて `/team-review` で並列レビューを実行します。
 ```
 
 ### 5-2. [MUST] 実装サマリーをローカルに保存
@@ -460,7 +489,7 @@ poe all
 - {file list from git diff}
 
 ### 次のステップ
-`/team-review` で並列レビュー予定
+`/team-review` で並列レビューを自動実行します
 ```
 
 > git コマンドで情報取得（`context: fork` で直接実行）、Linear MCP でコメント投稿。
@@ -473,6 +502,35 @@ Clean up the team
 
 ---
 
+## Step 6: Auto-Continue to Review
+
+**実装完了後、自動的に `/team-review` を起動する。**
+
+> このステップにより、dont ask モードでの `team-implement → team-review` 自動発火が実現する。
+
+### 6-1. Tier 判定に基づく自動発火
+
+| Tier | 動作 |
+|------|------|
+| **XS** | `/team-review` をスキップし、直接 `/deploy` を自動起動 |
+| **S/M/L** | Step 5 の記録ステップ完了後、自動的に `/team-review` を起動 |
+
+### 6-2. 実行手順
+
+Step 5 の全サブステップ（5-1 ~ 5-4）が完了した後：
+
+1. **XS の場合**: 「レビュー省略（XS tier）」とユーザーに報告し、`/deploy` を自動起動
+2. **S/M/L の場合**: `/team-review` スキルを起動する
+
+```
+実装が完了しました。品質チェック全通過を確認済みです。
+続けて `/team-review` で並列レビューを実行します。
+```
+
+**重要**: ユーザーに「レビューしますか？」と質問せず、自動的に `/team-review` を起動すること。`startproject → team-implement` と同様の自動発火パターンに従う。
+
+---
+
 ## Tips
 
 - **Adaptive**: XS/S は Claude 直接実装、M は小チーム、L はフルチーム（`.claude/rules/adaptive-execution.md`）
@@ -481,3 +539,4 @@ Clean up the team
 - **ファイル競合回避**: モジュール単位の所有権分離が最重要
 - **Tester 分離**: Implementer とは別に Tester を立てるとTDD的に回る
 - **コスト意識**: 各 Teammate は独立した Claude インスタンス（トークン消費大）→ 小タスクにはチーム不要
+- **自動発火**: Step 6 により `team-implement → team-review → deploy` が自動的に繋がる（XS は直接 deploy）
