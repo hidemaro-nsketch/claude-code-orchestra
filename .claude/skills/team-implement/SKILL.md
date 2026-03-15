@@ -47,11 +47,11 @@ metadata:
 |---------------|---------|:--:|:--:|:--:|:--:|
 | DESIGN.md 記録（design-tracker） | Step 0 | MUST | MUST | MUST | MUST |
 | Linear に設計記録コメント | Step 0 | MUST | MUST | MUST | MUST |
-| `log-{feature}.md` PRE エントリ | Step 0 | MUST | MUST | MUST | MUST |
+| タスクファイルの Decision Log に PRE エントリ | Step 0 | MUST | MUST | MUST | MUST |
 | ブランチ情報をログに記録 | Step 1 | — | MUST | MUST | MUST |
 | 介入判断をログに記録 | Step 4 | — | — | 該当時 | 該当時 |
-| `implementation-{feature}.md` 保存 | Step 5 | MUST | MUST | MUST | MUST |
-| `log-{feature}.md` POST エントリ | Step 5 | MUST | MUST | MUST | MUST |
+| タスクファイルの Implementation Summary 保存 | Step 5 | MUST | MUST | MUST | MUST |
+| タスクファイルの Decision Log に POST エントリ | Step 5 | MUST | MUST | MUST | MUST |
 | Linear に実装完了コメント | Step 5 | MUST | MUST | MUST | MUST |
 
 > **Linear タスクIDが無い場合**: ユーザーに確認する。「Linear タスクIDが見つかりません。Linear への投稿をスキップしますか？それともタスクIDを指定しますか？」と質問し、指示に従う。**暗黙的なスキップは禁止。**
@@ -62,7 +62,7 @@ metadata:
 
 ### 判定方法
 
-`.claude/docs/decisions/fix-tasks-{feature}.md` が存在する場合、Fix Mode として動作する。
+タスクファイル `.claude/docs/decisions/task-{id}-{feature}.md` の `## Fix Tasks` セクションが空でない場合、Fix Mode として動作する。
 
 ### Fix Mode の動作
 
@@ -70,7 +70,7 @@ metadata:
 |---------|-----------|----------|
 | **Step 0** | 設計記録 + Linear投稿 | スキップ（設計変更なし） |
 | **Step 1** | ブランチ作成 | スキップ（既存ブランチを使用） |
-| **Step 2** | タスク分析 + チーム設計 | `fix-tasks-{feature}.md` をタスクリストとして使用 |
+| **Step 2** | タスク分析 + チーム設計 | タスクファイルの Fix Tasks セクションをタスクリストとして使用 |
 | **Step 3-4** | Teammate 起動 + モニタリング | Tier に応じて通常通り（修正タスクを実装） |
 | **Step 5** | 統合検証 + サマリー保存 | 通常通り（修正結果を検証） |
 | **Step 6** | `/team-review` 自動起動 | 通常通り（再レビューを自動起動） |
@@ -78,8 +78,8 @@ metadata:
 ### Fix Mode の特記事項
 
 - **コミットメッセージ**: `fix: {issue description} (review round {N})` 形式を使用
-- **Fix タスクファイル**: 修正完了後に `fix-tasks-{feature}.md` を削除する
-- **ログ記録**: `log-{feature}.md` に `[team-implement:fix] POST` エントリを追記
+- **Fix Tasks セクション**: 修正完了後にタスクファイルの Fix Tasks セクションをクリアする
+- **ログ記録**: タスクファイルの Decision Log セクションに `[team-implement:fix] POST` エントリを追記
 
 ## Workflow (Full — Tier L)
 
@@ -87,11 +87,11 @@ metadata:
 Step 0: Record Design Decisions
   0-1. /design-tracker で設計決定を DESIGN.md に記録
   0-2. [MUST] Linear に設計記録コメントを投稿
-  0-3. [MUST] log-{feature}.md に PRE エントリ追記
+  0-3. [MUST] タスクファイルの Decision Log に PRE エントリ追記
     ↓
 Step 1: Create Feature Branch
   1-1. feature/{name} ブランチを作成
-  1-2. [MUST] ブランチ情報を log-{feature}.md に記録
+  1-2. [MUST] ブランチ情報をタスクファイルの Decision Log に記録
     ↓
 Step 2: Analyze Plan & Design Team (M/L only)
   計画からタスク依存関係を分析し、チーム構成を決定
@@ -101,12 +101,12 @@ Step 3: Spawn Agent Team (L only)
     ↓
 Step 4: Monitor & Coordinate (L only)
   4-1. Lead がモニタリング、統合、品質管理
-  4-2. [MUST] 介入判断があれば log-{feature}.md に記録
+  4-2. [MUST] 介入判断があればタスクファイルの Decision Log に記録
     ↓
 Step 5: Integration & Verification
   5-1. 全タスク完了後、統合テスト実行
-  5-2. [MUST] implementation-{feature}.md にサマリー保存
-  5-3. [MUST] log-{feature}.md に POST エントリ追記
+  5-2. [MUST] タスクファイルの Implementation Summary にサマリー保存
+  5-3. [MUST] タスクファイルの Decision Log に POST エントリ追記
   5-4. [MUST] Linear に実装完了コメントを投稿
     ↓
 Step 6: Auto-Continue to Review
@@ -175,7 +175,7 @@ Linear MCP ツールで、/startproject から引き継いだ Linear タスクID
 
 **このサブステップは全 tier で必須。スキップ不可。**
 
-`.claude/docs/decisions/log-{feature}.md` に PRE エントリを追記:
+タスクファイル `.claude/docs/decisions/task-{id}-{feature}.md` の `## Decision Log` セクションに PRE エントリを追記:
 
 ```markdown
 ### [team-implement] PRE — {date}
@@ -207,7 +207,7 @@ feature ブランチを作成・チェックアウト:
 
 **このサブステップは S/M/L tier で必須。スキップ不可。**
 
-`.claude/docs/decisions/log-{feature}.md` に DECISION エントリを追記:
+タスクファイル `.claude/docs/decisions/task-{id}-{feature}.md` の `## Decision Log` セクションに DECISION エントリを追記:
 
 ```markdown
 ### [team-implement] DECISION — {date}
@@ -218,6 +218,8 @@ feature ブランチを作成・チェックアウト:
 - **ステータス**: 承認済み
 - **成果物**: ブランチ `feature/{feature-name}`
 ```
+
+また、タスクファイルの frontmatter `branch:` フィールドを作成したブランチ名で更新する。
 
 ---
 
@@ -351,9 +353,9 @@ Wait for all teammates to complete their tasks.
 
 ### 4-2. [MUST] 介入判断をログに記録
 
-**Lead がモニタリング中に介入判断を行った場合、必ずローカルログに記録する。該当する介入がなければこのサブステップは不要。**
+**Lead がモニタリング中に介入判断を行った場合、必ずタスクファイルに記録する。該当する介入がなければこのサブステップは不要。**
 
-`.claude/docs/decisions/log-{feature}.md` に DECISION エントリを追記:
+タスクファイル `.claude/docs/decisions/task-{id}-{feature}.md` の `## Decision Log` セクションに DECISION エントリを追記:
 
 ```markdown
 ### [team-implement] DECISION — {date}
@@ -413,7 +415,7 @@ poe all
 
 **このサブステップは全 tier で必須。スキップ不可。**
 
-1. `.claude/docs/decisions/implementation-{feature}.md` に保存:
+1. タスクファイル `.claude/docs/decisions/task-{id}-{feature}.md` の `## Implementation Summary` セクションに保存:
 
 ```markdown
 ## Implementation Summary: {feature}
@@ -444,14 +446,14 @@ poe all
 
 **このサブステップは全 tier で必須。スキップ不可。**
 
-`.claude/docs/decisions/log-{feature}.md` に POST エントリを追記:
+タスクファイル `.claude/docs/decisions/task-{id}-{feature}.md` の `## Decision Log` セクションに POST エントリを追記:
 
 ```markdown
 ### [team-implement] POST — {date}
 
 - **担当者**: Claude Lead
 - **概要**: 実装完了、{task_count}タスク完了、品質チェック全通過
-- **成果物**: `.claude/docs/decisions/implementation-{feature}.md`
+- **成果物**: タスクファイルの Implementation Summary セクション
 ```
 
 ### 5-4. [MUST] Linear に実装完了コメントを投稿

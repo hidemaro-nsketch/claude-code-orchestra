@@ -28,6 +28,55 @@ metadata:
 /team-review                ← 並列レビュー
 ```
 
+## Task File（統合タスクファイル）
+
+各タスクの全情報を 1 つのファイルに統合する。セッション復帰時の自動検出にも使用する。
+
+### ファイル命名規則
+
+| 状況 | ファイル名 |
+|------|-----------|
+| Linear ID あり | `task-{LINEAR_ID}-{feature}.md` (例: `task-NSKTCH-50-user-auth.md`) |
+| Linear ID なし | `task-{YYYYMMDD-HHMM}-{feature}.md` (例: `task-20260315-1430-user-auth.md`) |
+| Linear ID 後から判明 | リネーム（timestamp → Linear ID） |
+
+### ファイル構造
+
+```markdown
+---
+feature: {feature-name}
+linear_id: NSKTCH-50  # or null
+status: active  # active | completed
+tier: M
+branch: feature/{feature-name}
+created: 2026-03-15
+---
+
+# Task: {feature-name}
+
+## Brief
+{プロジェクト概要書 — Phase 1 で作成}
+
+## Implementation Summary
+{実装サマリー — /team-implement Step 5 で記入}
+
+## Fix Tasks
+{レビュー修正タスク — /team-review Step 5 で記入、修正後クリア}
+
+## Decision Log
+{全フェーズのログエントリ — PRE/DECISION/POST を時系列で追記}
+```
+
+### セッション復帰時の自動検出
+
+```
+1. .claude/docs/decisions/task-*.md を Glob で検索
+2. frontmatter の status: active をチェック
+3. 1件 → 自動復帰（「前回のタスク {feature} を継続します」）
+4. 複数件 → ユーザーに選択肢を提示
+5. 0件 → 新規タスク開始
+```
+
 ## Workflow
 
 ```
@@ -61,11 +110,12 @@ Phase 3: PLAN & APPROVE (Claude Lead + User)
 
 | 記録アクション | 発生箇所 | S | M | L |
 |---------------|---------|:--:|:--:|:--:|
+| タスクファイル作成 | Phase 1 (1-3) | MUST | MUST | MUST |
 | 要件決定をログに記録 | Phase 1 (1-4) | MUST | MUST | MUST |
-| 概要書をファイル保存 | Phase 1 (1-6) | MUST | MUST | MUST |
-| `log-{feature}.md` PRE エントリ | Phase 1 (1-6) | MUST | MUST | MUST |
+| 概要書を Brief セクションに保存 | Phase 1 (1-6) | MUST | MUST | MUST |
+| Decision Log に PRE エントリ | Phase 1 (1-6) | MUST | MUST | MUST |
 | Linear に計画完了コメント | Phase 3 (3-4) | MUST | MUST | MUST |
-| `log-{feature}.md` POST エントリ | Phase 3 (3-4) | MUST | MUST | MUST |
+| Decision Log に POST エントリ | Phase 3 (3-4) | MUST | MUST | MUST |
 
 > **Linear タスクIDが無い場合**: ユーザーに確認する。「Linear タスクIDが見つかりません。Linear への投稿をスキップしますか？それともタスクIDを指定しますか？」と質問し、指示に従う。**暗黙的なスキップは禁止。**
 
@@ -147,6 +197,51 @@ git 履歴の調査が必要な場合（変更経緯の把握、blame 等）:
 
 > **Routing**: Linear 操作は `.claude/rules/tool-routing.md` に従い、Gemini サブエージェント経由で計画、Claude MCP で実行する。
 
+### Step 2-2: [MUST] タスクファイル作成
+
+**このサブステップは全 tier で必須。スキップ不可。**
+
+Step 2 で Linear タスクIDを取得した後、統合タスクファイルを作成する。
+
+**ファイル名の決定:**
+
+```bash
+# Linear ID がある場合:
+task-{LINEAR_ID}-{feature}.md  # 例: task-NSKTCH-50-user-auth.md
+
+# Linear ID がない場合（タイムスタンプ生成）:
+task-$(date +%Y%m%d-%H%M)-{feature}.md  # 例: task-20260315-1430-user-auth.md
+```
+
+**初期ファイル内容:**
+
+```markdown
+---
+feature: {feature-name}
+linear_id: {LINEAR_ID or null}
+status: active
+tier: {tier from Step 0}
+branch: null
+created: {date}
+---
+
+# Task: {feature-name}
+
+## Brief
+{Phase 1 Step 4 で記入}
+
+## Implementation Summary
+{/team-implement Step 5 で記入}
+
+## Fix Tasks
+{/team-review Step 5 で記入}
+
+## Decision Log
+```
+
+> ディレクトリ `.claude/docs/decisions/` が存在しない場合は作成する。
+> 以降、このファイルを「タスクファイル」と呼ぶ。すべてのフェーズでこのファイルに追記する。
+
 ### Step 3: Requirements Gathering
 
 ユーザーに質問して要件を明確化（日本語で）：
@@ -161,9 +256,9 @@ git 履歴の調査が必要な場合（変更経緯の把握、blame 等）:
 
 **このサブステップは全 tier で必須。スキップ不可。**
 
-要件定義で確定した意思決定をローカルログに記録する：
+要件定義で確定した意思決定をタスクファイルの Decision Log セクションに追記する：
 
-`.claude/docs/decisions/log-{feature}.md` に DECISION エントリを追記:
+タスクファイル `.claude/docs/decisions/task-{id}-{feature}.md` の `## Decision Log` セクションに追記:
 
 ```markdown
 ### [startproject] DECISION — {date}
@@ -205,24 +300,22 @@ git 履歴の調査が必要な場合（変更経緯の把握、blame 等）:
 
 This brief is passed to Phase 2 teammates as shared context.
 
-### Step 4-2: [MUST] 概要書をファイル保存 + ログに PRE エントリ追記
+### Step 4-2: [MUST] 概要書をタスクファイルに保存 + Decision Log に PRE エントリ追記
 
 **このサブステップは全 tier で必須。スキップ不可。**
 
-プロジェクト概要書をファイルに保存する：
+プロジェクト概要書をタスクファイルに保存する：
 
-1. `.claude/docs/decisions/brief-{feature}.md` にプロジェクト概要書の全内容を保存
-2. `.claude/docs/decisions/log-{feature}.md` に PRE エントリを追記:
+1. タスクファイルの `## Brief` セクションにプロジェクト概要書の全内容を記入
+2. タスクファイルの `## Decision Log` セクションに PRE エントリを追記:
 
 ```markdown
 ### [startproject] PRE — {date}
 
 - **担当者**: Claude Lead
 - **概要**: プロジェクト概要書を作成（{feature}）
-- **成果物**: `.claude/docs/decisions/brief-{feature}.md`
+- **成果物**: タスクファイル `## Brief` セクション
 ```
-
-> ディレクトリ `.claude/docs/decisions/` が存在しない場合は作成する。
 
 ---
 
@@ -427,8 +520,7 @@ Linear MCP ツールで、Phase 1 で取得した Linear タスクIDに以下を
 - 推定ワークストリーム: {stream_count}本
 
 ### 成果物
-- `.claude/docs/decisions/brief-{feature}.md`
-- `.claude/docs/decisions/log-{feature}.md`
+- `.claude/docs/decisions/task-{id}-{feature}.md`（統合タスクファイル）
 - `.claude/docs/DESIGN.md`（更新）
 - `.claude/docs/research/{feature}.md`
 
@@ -436,7 +528,7 @@ Linear MCP ツールで、Phase 1 で取得した Linear タスクIDに以下を
 - `/team-implement` で並列実装を開始
 ```
 
-**[MUST]** 同時に `.claude/docs/decisions/log-{feature}.md` に POST エントリを追記（スキップ不可）:
+**[MUST]** 同時にタスクファイルの `## Decision Log` セクションに POST エントリを追記（スキップ不可）:
 
 ```markdown
 ### [startproject] POST — {date}
@@ -487,12 +579,11 @@ Present the plan in Japanese:
 
 | File | Author | Purpose |
 |------|--------|---------|
+| `.claude/docs/decisions/task-{id}-{feature}.md` | Lead | 統合タスクファイル（Brief + Decision Log） |
 | `.claude/docs/research/{feature}.md` | Researcher | External research findings |
 | `.claude/docs/libraries/{lib}.md` | Researcher | Library documentation |
 | `.claude/docs/DESIGN.md` | Architect | Architecture decisions |
 | `CLAUDE.md` (updated) | Lead | Cross-session project context |
-| `.claude/docs/decisions/brief-{feature}.md` | Lead | Project brief (persistent) |
-| `.claude/docs/decisions/log-{feature}.md` | Lead | Canonical decision log |
 | Task list (internal) | Lead | Implementation tracking |
 
 ---

@@ -176,6 +176,7 @@ Claude Code (Opus 4.6) のコンテキストは **1M トークン**（実質 **3
 |----------|---------|
 | `.claude/rules/` | コーディング・セキュリティ・言語ルール |
 | `.claude/docs/DESIGN.md` | 設計決定の記録 |
+| `.claude/docs/decisions/task-{id}-{feature}.md` | 統合タスクファイル（Brief + Implementation + Fix Tasks + Decision Log） |
 | `.claude/docs/research/` | 調査結果（Gemini / レビュー） |
 | `.claude/docs/libraries/` | ライブラリ制約ドキュメント |
 | `.claude/logs/cli-tools.jsonl` | OpenCode/Gemini入出力ログ |
