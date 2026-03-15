@@ -312,7 +312,7 @@ Wait for all teammates to complete their tasks.
 | Teammate が長時間タスクを進めない | メッセージで確認、必要なら再指示 |
 | ファイル競合が発生 | 所有権を再配分 |
 | テストが失敗し続ける | 関連する Implementer にメッセージ |
-| 想定外の技術的問題 | Codex に相談（サブエージェント経由） |
+| 想定外の技術的問題 | OpenCode に相談（サブエージェント経由） |
 
 ### Quality Gates (via Hooks)
 
@@ -340,7 +340,7 @@ Wait for all teammates to complete their tasks.
 以下の場合に記録する：
 - ファイル所有権の再配分
 - Teammate への再指示
-- 技術的問題の解決（特に Codex 相談を伴うもの）
+- 技術的問題の解決（特に OpenCode 相談を伴うもの）
 - 実装中のスコープ変更
 
 ---

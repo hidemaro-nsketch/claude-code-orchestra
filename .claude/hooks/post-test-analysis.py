@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-PostToolUse hook: Suggest Codex analysis after test/build failures.
+PostToolUse hook: Suggest OpenCode analysis after test/build failures.
 
-Analyzes test and build output and suggests Codex consultation
+Analyzes test and build output and suggests OpenCode consultation
 for debugging complex failures.
 """
 
 import json
-import sys
 import re
+import sys
 
 # Commands that run tests or builds
 TEST_BUILD_COMMANDS = [
@@ -48,7 +48,7 @@ FAILURE_PATTERNS = [
     r"FAIL:",
 ]
 
-# Simple errors that don't need Codex
+# Simple errors that don't need OpenCode
 SIMPLE_ERRORS = [
     "ModuleNotFoundError",  # Usually just need to install
     "command not found",
@@ -78,12 +78,14 @@ def has_complex_failure(output: str) -> tuple[bool, str]:
             failure_count += len(matches)
             matched_patterns.append(pattern)
 
-    # Multiple failures or complex errors suggest need for Codex
+    # Multiple failures or complex errors suggest need for OpenCode
     if failure_count >= 3:
         return True, f"Multiple failures detected ({failure_count} issues)"
 
     # Single failure in test output
-    if failure_count >= 1 and any(p in output.lower() for p in ["traceback", "assertion"]):
+    if failure_count >= 1 and any(
+        p in output.lower() for p in ["traceback", "assertion"]
+    ):
         return True, "Test failure with traceback"
 
     return False, ""
@@ -101,7 +103,9 @@ def main():
         tool_input = data.get("tool_input", {})
         tool_response = data.get("tool_response", {})
         command = tool_input.get("command", "")
-        tool_output = tool_response.get("stdout", "") or tool_response.get("content", "")
+        tool_output = tool_response.get("stdout", "") or tool_response.get(
+            "content", ""
+        )
 
         # Check if it's a test/build command
         if not is_test_or_build_command(command):
@@ -115,11 +119,11 @@ def main():
                 "hookSpecificOutput": {
                     "hookEventName": "PostToolUse",
                     "additionalContext": (
-                        f"[Codex Debug Suggestion] {reason}. "
-                        "Consider consulting Codex for debugging analysis. "
+                        f"[OpenCode Debug Suggestion] {reason}. "
+                        "Consider consulting OpenCode for debugging analysis. "
                         "**Recommended**: Use Task tool with subagent_type='general-purpose' "
-                        "to consult Codex with full error context and preserve main context."
-                    )
+                        "to consult OpenCode with full error context and preserve main context."
+                    ),
                 }
             }
             print(json.dumps(output))

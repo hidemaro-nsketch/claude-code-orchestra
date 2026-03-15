@@ -2,7 +2,7 @@
 
 **Defines which tools and operations are delegated to which agent.**
 
-This file complements agent-specific rules (`codex-delegation.md`, `gemini-delegation.md`)
+This file complements agent-specific rules (`opencode-delegation.md`, `gemini-delegation.md`)
 by providing cross-cutting routing decisions.
 
 ## Adaptive Execution Override
@@ -11,8 +11,8 @@ by providing cross-cutting routing decisions.
 
 ルーティングルールはタスクサイズに応じて適応される：
 
-- **XS/S タスク**: Codex/Gemini への委託は不要。Claude が直接対応する。ただし git/docker/ruff/uv 等のコマンド実行ルーティング（下記テーブル）は全 tier で適用。
-- **M タスク**: 必要な場合のみ Codex サブエージェントで設計相談。Gemini は未知のライブラリ・外部 API がある場合のみ。
+- **XS/S タスク**: OpenCode/Gemini への委託は不要。Claude が直接対応する。ただし git/docker/ruff/uv 等のコマンド実行ルーティング（下記テーブル）は全 tier で適用。
+- **M タスク**: 必要な場合のみ OpenCode サブエージェントで設計相談。Gemini は未知のライブラリ・外部 API がある場合のみ。
 - **L タスク**: フルルーティング（全ルール適用）。
 
 ## Routing Table
@@ -30,7 +30,7 @@ by providing cross-cutting routing decisions.
 | Shell script generation | **Gemini subagent** | Script creation + execution |
 | File organization | **Gemini subagent** | Bulk rename, directory restructure |
 | Codebase analysis | **Gemini subagent** | `gemini-explore` or `general-purpose` |
-| Design decisions | Codex | Subagent or Agent Teams |
+| Design decisions | OpenCode | Subagent or Agent Teams |
 | External research | Gemini | Subagent or Agent Teams |
 | Multimodal | Gemini | Subagent |
 

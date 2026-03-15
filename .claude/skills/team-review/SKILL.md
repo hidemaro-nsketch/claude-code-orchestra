@@ -132,8 +132,8 @@ Spawn reviewers:
    - Function length (target < 20 lines)
    - Library constraint violations (.claude/docs/libraries/)
 
-   Use Codex CLI for deep analysis of complex logic:
-   codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "{question}" 2>/dev/null
+   Use OpenCode CLI for deep analysis of complex logic:
+   opencode run -m github-copilot/gpt-5.4 "{question}" 2>/dev/null
 
    Changed files: {list}
 
@@ -383,7 +383,7 @@ Simplify 完了後、結果をローカルログに記録する：
 
 - **Adaptive**: XS はスキップ、S は Claude 直接、M は 2 名、L はフル 4 名（`.claude/rules/adaptive-execution.md`）
 - **レビュアーの専門分化**: 各レビュアーが異なる視点に集中することで漏れを防ぐ（Tier L）
-- **Codex 活用**: Quality Reviewer が複雑なロジックを Codex に分析させる
+- **OpenCode 活用**: Quality Reviewer が複雑なロジックを OpenCode に分析させる
 - **レポート永続化**: `.claude/docs/research/` にレビュー結果を保存し、修正時の参照に
 - **競合仮説モード**: バグ調査時は adversarial review パターンが有効
 - **コスト意識**: 4 レビュアー = 4x トークン消費 → タスクサイズに合わせてレビュアー数を調整

@@ -107,9 +107,9 @@ All library documentation should be saved to:
 - Investigating library conflicts or issues
 - When user says "このライブラリについて調べて", "research this library"
 
-## Integration with Codex
+## Integration with OpenCode
 
 After Gemini researches a library:
 1. Documentation is saved to `.claude/docs/libraries/`
-2. Codex can reference this when reviewing code or refactoring
+2. OpenCode can reference this when reviewing code or refactoring
 3. Ensures library constraints are respected across all agents

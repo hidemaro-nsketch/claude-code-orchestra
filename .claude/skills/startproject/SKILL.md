@@ -42,7 +42,7 @@ Phase 1: UNDERSTAND (Claude Lead — 1M context)
     ↓
 Phase 2: RESEARCH & DESIGN (tier-dependent)
   XS/S: スキップ
-  M: Codex サブエージェントのみ（設計相談）
+  M: OpenCode サブエージェントのみ（設計相談）
   L: Agent Teams (Researcher ←→ Architect)
     ↓
 Phase 3: PLAN & APPROVE (Claude Lead + User)
@@ -83,11 +83,11 @@ Phase 3: PLAN & APPROVE (Claude Lead + User)
 tier = max(file_tier, complexity_tier, risk_tier)
 ```
 
-| Tier | Phase 2 | Gemini 調査 | Codex 設計 |
+| Tier | Phase 2 | Gemini 調査 | OpenCode 設計 |
 |------|---------|------------|-----------|
 | **XS** | /startproject 自体不要 | 不要 | 不要 |
 | **S** | スキップ | 不要 | 不要 |
-| **M** | Codex サブエージェントのみ | 必要時のみ | サブエージェント |
+| **M** | OpenCode サブエージェントのみ | 必要時のみ | サブエージェント |
 | **L** | Agent Teams (フル) | 標準 | Agent Teams |
 
 ### Presentation
@@ -234,20 +234,20 @@ This brief is passed to Phase 2 teammates as shared context.
 
 Phase 2 をスキップし、Phase 3 に直接進む。Claude Lead が Phase 1 の知識で計画を作成する。
 
-### Tier M: Codex Subagent Only
+### Tier M: OpenCode Subagent Only
 
-Agent Teams は使用しない。Codex サブエージェントに設計相談する：
+Agent Teams は使用しない。OpenCode サブエージェントに設計相談する：
 
 ```
 Task tool parameters:
 - subagent_type: "general-purpose"
 - prompt: |
-    Consult Codex about architecture for: {feature}
+    Consult OpenCode about architecture for: {feature}
 
     Project Brief:
     {project brief from Phase 1}
 
-    codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "
+    opencode run -m github-copilot/gpt-5.4 "
     {design question}
     " 2>/dev/null
 
@@ -296,10 +296,10 @@ Spawn two teammates:
    - Respond to Architect's research requests
    - Flag constraints that limit implementation options"
 
-2. **Architect** — Codex CLI を使って設計検討を行う
+2. **Architect** — OpenCode CLI を使って設計検討を行う
    Prompt: "You are the Architect for project: {feature}.
 
-   Your job: Use Codex CLI to design the architecture and implementation plan.
+   Your job: Use OpenCode CLI to design the architecture and implementation plan.
 
    Project Brief:
    {project brief from Phase 1}
@@ -310,8 +310,8 @@ Spawn two teammates:
    3. Break down into implementable tasks with dependencies
    4. Identify risks and mitigation strategies
 
-   How to consult Codex:
-   codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "{question}" 2>/dev/null
+   How to consult OpenCode:
+   opencode run -m github-copilot/gpt-5.4 "{question}" 2>/dev/null
 
    Update .claude/docs/DESIGN.md with architecture decisions.
 
@@ -337,9 +337,9 @@ Researcher: "httpx has a connection pool limit of 100 by default"
 
 Without Agent Teams (old subagent approach), this would require:
 1. Gemini subagent finishes → returns summary
-2. Claude reads summary → creates new Codex subagent prompt
-3. Codex subagent finishes → returns summary
-4. If Codex needs more info → another Gemini subagent round
+2. Claude reads summary → creates new OpenCode subagent prompt
+3. OpenCode subagent finishes → returns summary
+4. If OpenCode needs more info → another Gemini subagent round
 
 Agent Teams collapses this into a single parallel session with real-time interaction.
 
@@ -499,7 +499,7 @@ Present the plan in Japanese:
 
 - **Step 0**: タスクサイズ (XS/S/M/L) を判定し、ワークフローを適応させる（`.claude/rules/adaptive-execution.md`）
 - **Phase 1**: Claude は 1M コンテキストでコードベースを直接読める。Gemini への委託は不要
-- **Phase 2**: L のみ Agent Teams、M は Codex サブエージェントのみ、S はスキップ
+- **Phase 2**: L のみ Agent Teams、M は OpenCode サブエージェントのみ、S はスキップ
 - **Phase 3**: 計画承認後、`/team-implement` で並列実装に進む
 - **Ctrl+T**: タスクリストの表示切り替え
 - **Shift+Up/Down**: チームメイト間の移動（Agent Teams 使用時）

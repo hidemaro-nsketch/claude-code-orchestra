@@ -1,4 +1,4 @@
-# CLI vs MCP: Codex/Gemini Integration Comparison
+# CLI vs MCP: OpenCode/Gemini Integration Comparison
 
 ## Executive Summary
 
@@ -19,7 +19,7 @@
 
 | Aspect | CLI via Bash | MCP Server |
 |--------|-------------|------------|
-| **Process model** | New process per call (`codex exec`) | Long-running server process |
+| **Process model** | New process per call (`opencode run`) | Long-running server process |
 | **Startup time** | ~100-500ms (process spawn + CLI init) | ~10-50ms (JSON-RPC call to existing server) |
 | **Serialization** | String construction + shell escaping | JSON serialization/deserialization |
 | **Memory** | Isolated process (clean slate each time) | Persistent server (state management needed) |
@@ -93,7 +93,7 @@
 
 | Aspect | CLI via Bash | MCP Server |
 |--------|-------------|------------|
-| **Pattern** | Task tool → spawns subagent → `Bash("codex exec ...")` | Task tool → spawns subagent → ??? |
+| **Pattern** | Task tool → spawns subagent → `Bash("opencode run ...")` | Task tool → spawns subagent → ??? |
 | **Context flow** | Subagent calls CLI, processes full output, returns summary | Subagent calls MCP tool, processes response, returns summary |
 | **Isolation** | Full process isolation (each call independent) | Depends on MCP server design |
 | **Pros** | ✅ Already working<br>✅ No changes needed<br>✅ Subagent can save raw CLI output | ✅ Could pass structured context<br>✅ Subagent could use MCP resources |
@@ -107,7 +107,7 @@
 
 | Aspect | CLI via Bash | MCP Server |
 |--------|-------------|------------|
-| **Setup complexity** | Install CLI tools (`codex`, `gemini`) | Install MCP SDK + implement server + register with Claude |
+| **Setup complexity** | Install CLI tools (`opencode`, `gemini`) | Install MCP SDK + implement server + register with Claude |
 | **Development** | No code (just call CLI) | Write MCP server code (tools, resources, prompts) |
 | **Debugging** | Shell command testing, `echo` output | JSON-RPC debugging, protocol inspection |
 | **Documentation** | CLI `--help`, man pages | MCP spec, SDK docs |
@@ -144,7 +144,7 @@
 ### CLI Strengths for This Use Case
 1. **Already working** - Hooks, subagents, logging all in place
 2. **Simple** - No server lifecycle, no protocol complexity
-3. **Flexible** - Can call any CLI tool (not just Codex/Gemini)
+3. **Flexible** - Can call any CLI tool (not just OpenCode/Gemini)
 4. **Debuggable** - Shell commands easy to test independently
 
 ### MCP Strengths for Future
@@ -187,11 +187,11 @@
 
 ```python
 # Phase 1: Implement MCP server wrapper
-# Expose codex/gemini as MCP tools
-class CodexMCPServer:
+# Expose opencode/gemini as MCP tools
+class OpenCodeMCPServer:
     @mcp.tool()
-    async def consult_codex(prompt: str, model: str) -> str:
-        # Call codex CLI internally
+    async def consult_opencode(prompt: str, model: str) -> str:
+        # Call opencode CLI internally
         # Return structured response
         pass
 
@@ -200,7 +200,7 @@ class CodexMCPServer:
 # Update logging to capture MCP protocol
 
 # Phase 3: Remove CLI dependency
-# Implement Codex/Gemini as native MCP servers
+# Implement OpenCode/Gemini as native MCP servers
 ```
 
 ---

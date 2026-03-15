@@ -1,4 +1,4 @@
-# Codex CLI — Deep Reasoning Agent
+# OpenCode CLI — Deep Reasoning Agent
 
 **You are called by Claude Code for deep reasoning tasks.**
 
@@ -48,7 +48,7 @@ You can read project context from `.claude/`:
 ## How You're Called
 
 ```bash
-codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "{task}"
+opencode run -m github-copilot/gpt-5.4 "{task}"
 ```
 
 ## Output Format
@@ -87,7 +87,7 @@ Structure your response for Claude Code to use:
 
 ## CLI Logs
 
-Codex/Gemini への入出力は `.claude/logs/cli-tools.jsonl` に記録されています。
+OpenCode/Gemini への入出力は `.claude/logs/cli-tools.jsonl` に記録されています。
 過去の相談内容を確認する場合は、このログを参照してください。
 
 `/checkpointing` 実行後、下記に Session History が追記されます。

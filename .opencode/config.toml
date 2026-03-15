@@ -1,8 +1,8 @@
-# Codex CLI Project Configuration
-# This file enables project-specific Codex settings
+# OpenCode CLI Project Configuration
+# This file enables project-specific OpenCode settings
 
 # Default model configuration
-model = "gpt-5.3-codex"
+model = "github-copilot/gpt-5.4"
 model_reasoning_effort = "xhigh"
 model_reasoning_summary = "detailed"
 
@@ -19,4 +19,4 @@ skills = true
 # Skills configuration - enable project skills
 [[skills.config]]
 enabled = true
-path = ".codex/skills/context-loader"
+path = ".opencode/skills/context-loader"

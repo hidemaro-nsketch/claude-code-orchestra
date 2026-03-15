@@ -275,7 +275,7 @@ Placeholder variables use `{curly braces}`.
 **Intervention triggers for recording**:
 - File ownership reassignment
 - Teammate re-instruction
-- Technical problem resolution (especially Codex consultations)
+- Technical problem resolution (especially OpenCode consultations)
 - Scope changes during implementation
 
 ---

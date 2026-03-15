@@ -28,8 +28,8 @@ metadata:
 | **外部ライブラリ調査** | Gemini (Google Search) |
 | **最新ドキュメント検索** | Gemini (Google Search) |
 | **マルチモーダル (PDF/動画/音声)** | Gemini |
-| **設計判断** | Codex |
-| **デバッグ** | Codex |
+| **設計判断** | OpenCode |
+| **デバッグ** | OpenCode |
 
 ## Context Management
 
@@ -52,8 +52,8 @@ metadata:
 ## When NOT to Consult
 
 - **コードベース分析** → Claude が 1M コンテキストで直接読む
-- Design decisions → Codex
-- Debugging → Codex
+- Design decisions → OpenCode
+- Debugging → OpenCode
 - Code implementation → Claude
 - Simple file operations → Claude
 
@@ -121,7 +121,7 @@ Save Gemini research results to:
 .claude/docs/libraries/{library}.md
 ```
 
-This allows Claude and Codex to reference the research later.
+This allows Claude and OpenCode to reference the research later.
 
 ## Task Templates
 
@@ -164,17 +164,17 @@ gemini -p "Transcribe and summarize: decisions, action items" < meeting.mp3 2>/d
 
 See also: `references/lib-research-task.md`
 
-## Integration with Codex
+## Integration with OpenCode
 
 | Workflow | Steps |
 |----------|-------|
-| **New feature** | Gemini research → Codex design review |
-| **Library choice** | Gemini comparison → Codex decision |
-| **/startproject** | Agent Teams: Researcher (Gemini) ↔ Architect (Codex) |
+| **New feature** | Gemini research → OpenCode design review |
+| **Library choice** | Gemini comparison → OpenCode decision |
+| **/startproject** | Agent Teams: Researcher (Gemini) ↔ Architect (OpenCode) |
 
 ## Why Gemini?
 
 - **Google Search**: Latest information, official docs, best practices
 - **Multimodal**: Native PDF/video/audio processing
 - **Web grounding**: Verified facts with source URLs
-- **Shared context**: Results saved for Claude/Codex to reference
+- **Shared context**: Results saved for Claude/OpenCode to reference

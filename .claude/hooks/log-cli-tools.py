@@ -1,32 +1,29 @@
 #!/usr/bin/env python3
 """
-PostToolUse hook: Log Codex/Gemini CLI input/output to JSONL file.
+PostToolUse hook: Log OpenCode/Gemini CLI input/output to JSONL file.
 
-Triggers after Bash tool calls containing 'codex' or 'gemini' commands.
+Triggers after Bash tool calls containing 'opencode' or 'gemini' commands.
 Logs are stored in .claude/logs/cli-tools.jsonl
 
-All agents (Claude Code, subagents, Codex, Gemini) can read this log.
+All agents (Claude Code, subagents, OpenCode, Gemini) can read this log.
 """
 
 import json
-import os
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 LOG_DIR = Path(__file__).parent.parent / "logs"
 LOG_FILE = LOG_DIR / "cli-tools.jsonl"
 
 
-def extract_codex_prompt(command: str) -> str | None:
-    """Extract prompt from codex exec command."""
-    # Pattern: codex exec ... "prompt" or codex exec ... 'prompt'
+def extract_opencode_prompt(command: str) -> str | None:
+    """Extract prompt from opencode run command."""
+    # Pattern: opencode run ... "prompt" or opencode run ... 'prompt'
     patterns = [
-        r'codex\s+exec\s+.*?--full-auto\s+"([^"]+)"',
-        r"codex\s+exec\s+.*?--full-auto\s+'([^']+)'",
-        r'codex\s+exec\s+.*?"([^"]+)"\s*2>/dev/null',
-        r"codex\s+exec\s+.*?'([^']+)'\s*2>/dev/null",
+        r'opencode\s+run\s+.*?"([^"]+)"',
+        r"opencode\s+run\s+.*?'([^']+)'",
     ]
     for pattern in patterns:
         match = re.search(pattern, command, re.DOTALL)
@@ -51,7 +48,7 @@ def extract_gemini_prompt(command: str) -> str | None:
 
 def extract_model(command: str) -> str | None:
     """Extract model name from command."""
-    match = re.search(r"--model\s+(\S+)", command)
+    match = re.search(r"(?:-m|--model)\s+(\S+)", command)
     return match.group(1) if match else None
 
 
@@ -88,18 +85,18 @@ def main() -> None:
     command = tool_input.get("command", "")
     output = tool_response.get("stdout", "") or tool_response.get("content", "")
 
-    # Check if this is a codex or gemini command
-    is_codex = "codex" in command.lower()
-    is_gemini = "gemini" in command.lower() and "codex" not in command.lower()
+    # Check if this is an opencode or gemini command
+    is_opencode = "opencode" in command.lower()
+    is_gemini = "gemini" in command.lower() and "opencode" not in command.lower()
 
-    if not (is_codex or is_gemini):
+    if not (is_opencode or is_gemini):
         return
 
     # Extract prompt based on tool type
-    if is_codex:
-        tool = "codex"
-        prompt = extract_codex_prompt(command)
-        model = extract_model(command) or "gpt-5.3-codex"
+    if is_opencode:
+        tool = "opencode"
+        prompt = extract_opencode_prompt(command)
+        model = extract_model(command) or "github-copilot/gpt-5.4"
     else:
         tool = "gemini"
         prompt = extract_gemini_prompt(command)
@@ -115,7 +112,7 @@ def main() -> None:
 
     # Create log entry
     entry = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "tool": tool,
         "model": model,
         "prompt": truncate_text(prompt),

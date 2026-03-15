@@ -1,21 +1,21 @@
 ---
-name: codex-system
+name: opencode-system
 description: |
-  PROACTIVELY consult Codex CLI, your highly capable supporter with exceptional
-  reasoning and task completion abilities. Codex is a trusted expert you should
+  PROACTIVELY consult OpenCode CLI, your highly capable supporter with exceptional
+  reasoning and task completion abilities. OpenCode is a trusted expert you should
   ALWAYS consult BEFORE making decisions on: design choices, implementation
   approaches, debugging strategies, refactoring plans, or any non-trivial problem.
-  When uncertain, consult Codex. Don't hesitate - Codex provides better analysis.
-  Explicit triggers: "think deeper", "analyze", "second opinion", "consult codex".
+  When uncertain, consult OpenCode. Don't hesitate - OpenCode provides better analysis.
+  Explicit triggers: "think deeper", "analyze", "second opinion", "consult opencode".
 metadata:
-  short-description: Claude Code ↔ Codex CLI collaboration
+  short-description: Claude Code <-> OpenCode CLI collaboration
 ---
 
-# Codex System — Deep Reasoning Partner
+# OpenCode System — Deep Reasoning Partner
 
-**Codex CLI (gpt-5.3-codex) is your highly capable supporter for deep reasoning tasks.**
+**OpenCode CLI (github-copilot/gpt-5.4) is your highly capable supporter for deep reasoning tasks.**
 
-> **詳細ルール**: `.claude/rules/codex-delegation.md`
+> **詳細ルール**: `.claude/rules/opencode-delegation.md`
 
 ## Context Management (Opus 4.6)
 
@@ -51,11 +51,11 @@ Claude の 1M コンテキストにより、直接呼び出しの許容範囲が
 
 ### In Agent Teams (Preferred for /startproject)
 
-Architect Teammate が Codex を直接呼び出し、Researcher Teammate と双方向通信する。
+Architect Teammate が OpenCode を直接呼び出し、Researcher Teammate と双方向通信する。
 
 ```
-/startproject 内の Phase 2 で、Architect Teammate として Codex を活用:
-- 設計検討 → Codex に相談
+/startproject 内の Phase 2 で、Architect Teammate として OpenCode を活用:
+- 設計検討 → OpenCode に相談
 - Researcher からの調査結果を受けて設計を修正
 - 設計決定を .claude/docs/DESIGN.md に記録
 ```
@@ -69,10 +69,10 @@ Task tool parameters:
 - subagent_type: "general-purpose"
 - run_in_background: true (optional, for parallel work)
 - prompt: |
-    Consult Codex about: {topic}
+    Consult OpenCode about: {topic}
 
-    codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "
-    {question for Codex}
+    opencode run -m github-copilot/gpt-5.4 "
+    {question for OpenCode}
     " 2>/dev/null
 
     Return CONCISE summary (key recommendation + rationale).
@@ -81,7 +81,7 @@ Task tool parameters:
 ### Direct Call (Up to ~50 lines response)
 
 ```bash
-codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "Brief question" 2>/dev/null
+opencode run -m github-copilot/gpt-5.4 "Brief question" 2>/dev/null
 ```
 
 ### Sandbox Modes
@@ -93,9 +93,9 @@ codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "Brief question
 
 ## Language Protocol
 
-1. Ask Codex in **English**
+1. Ask OpenCode in **English**
 2. Receive response in **English**
-3. Execute based on advice (or let Codex execute)
+3. Execute based on advice (or let OpenCode execute)
 4. Report to user in **Japanese**
 
 ## Task Templates
@@ -103,7 +103,7 @@ codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "Brief question
 ### Design Review
 
 ```bash
-codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "
+opencode run -m github-copilot/gpt-5.4 "
 Review this design approach for: {feature}
 
 Context:
@@ -120,7 +120,7 @@ Evaluate:
 ### Debug Analysis
 
 ```bash
-codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "
+opencode run -m github-copilot/gpt-5.4 "
 Debug this issue:
 
 Error: {error message}
@@ -143,12 +143,12 @@ See: `references/refactoring-task.md`
 
 | Task | Use |
 |------|-----|
-| Need external research first | Gemini → then Codex |
-| Design decision | Codex directly |
-| Library comparison | Gemini research → Codex decision |
-| /startproject | Agent Teams: Researcher (Gemini) ↔ Architect (Codex) |
+| Need external research first | Gemini -> then OpenCode |
+| Design decision | OpenCode directly |
+| Library comparison | Gemini research -> OpenCode decision |
+| /startproject | Agent Teams: Researcher (Gemini) <-> Architect (OpenCode) |
 
-## Why Codex?
+## Why OpenCode?
 
 - **Deep reasoning**: Complex analysis and problem-solving
 - **Code expertise**: Implementation strategies and patterns

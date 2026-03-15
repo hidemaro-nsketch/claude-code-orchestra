@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-PostToolUse hook: Detect errors from Bash commands and suggest codex-debugger.
+PostToolUse hook: Detect errors from Bash commands and suggest opencode-debugger.
 
 Broader than post-test-analysis.py — catches ANY Bash error,
-not just test/build commands. Directs to the codex-debugger subagent.
+not just test/build commands. Directs to the opencode-debugger subagent.
 """
 
 import json
@@ -54,9 +54,9 @@ IGNORE_OUTPUTS = [
     "Everything up-to-date",
 ]
 
-# Skip if the command itself is a Codex/Gemini call (avoid recursive suggestions)
+# Skip if the command itself is an OpenCode/Gemini call (avoid recursive suggestions)
 SKIP_COMMANDS = [
-    "codex ",
+    "opencode ",
     "gemini ",
 ]
 
@@ -103,7 +103,9 @@ def main() -> None:
         tool_input = data.get("tool_input", {})
         tool_response = data.get("tool_response", {})
         command = tool_input.get("command", "")
-        tool_output = tool_response.get("stdout", "") or tool_response.get("content", "")
+        tool_output = tool_response.get("stdout", "") or tool_response.get(
+            "content", ""
+        )
 
         if not command or not tool_output:
             sys.exit(0)
@@ -126,9 +128,9 @@ def main() -> None:
                     "hookEventName": "PostToolUse",
                     "additionalContext": (
                         f"[Error Detected] {error_count} error pattern(s) found in command output. "
-                        "**Action**: Use the `codex-debugger` subagent to analyze this error. "
-                        "Pass the full command and error output to the subagent for Codex-powered diagnosis. "
-                        "Example: Task(subagent_type='codex-debugger', prompt='Analyze this error: ...')"
+                        "**Action**: Use the `opencode-debugger` subagent to analyze this error. "
+                        "Pass the full command and error output to the subagent for OpenCode-powered diagnosis. "
+                        "Example: Task(subagent_type='opencode-debugger', prompt='Analyze this error: ...')"
                     ),
                 }
             }

@@ -3,49 +3,94 @@
 UserPromptSubmit hook: Route to appropriate agent based on user intent.
 
 Analyzes user prompts and suggests the most appropriate agent
-(Codex for design/debug, Gemini for research/multimodal).
+(OpenCode for design/debug, Gemini for research/multimodal).
 """
 
 import json
 import sys
 
-# Triggers for Codex (design, debugging, deep reasoning)
-CODEX_TRIGGERS = {
+# Triggers for OpenCode (design, debugging, deep reasoning)
+OPENCODE_TRIGGERS = {
     "ja": [
-        "設計", "どう設計", "アーキテクチャ",
-        "なぜ動かない", "エラー", "バグ", "デバッグ",
-        "どちらがいい", "比較して", "トレードオフ",
-        "実装方法", "どう実装",
-        "リファクタリング", "リファクタ",
-        "レビュー", "見て",
-        "考えて", "分析して", "深く",
+        "設計",
+        "どう設計",
+        "アーキテクチャ",
+        "なぜ動かない",
+        "エラー",
+        "バグ",
+        "デバッグ",
+        "どちらがいい",
+        "比較して",
+        "トレードオフ",
+        "実装方法",
+        "どう実装",
+        "リファクタリング",
+        "リファクタ",
+        "レビュー",
+        "見て",
+        "考えて",
+        "分析して",
+        "深く",
     ],
     "en": [
-        "design", "architecture", "architect",
-        "debug", "error", "bug", "not working", "fails",
-        "compare", "trade-off", "tradeoff", "which is better",
-        "how to implement", "implementation",
-        "refactor", "simplify",
-        "review", "check this",
-        "think", "analyze", "deeply",
+        "design",
+        "architecture",
+        "architect",
+        "debug",
+        "error",
+        "bug",
+        "not working",
+        "fails",
+        "compare",
+        "trade-off",
+        "tradeoff",
+        "which is better",
+        "how to implement",
+        "implementation",
+        "refactor",
+        "simplify",
+        "review",
+        "check this",
+        "think",
+        "analyze",
+        "deeply",
     ],
 }
 
 # Triggers for Gemini (research, multimodal, large context)
 GEMINI_TRIGGERS = {
     "ja": [
-        "調べて", "リサーチ", "調査",
-        "PDF", "動画", "音声", "画像",
-        "コードベース全体", "リポジトリ全体",
-        "最新", "ドキュメント",
-        "ライブラリ", "パッケージ",
+        "調べて",
+        "リサーチ",
+        "調査",
+        "PDF",
+        "動画",
+        "音声",
+        "画像",
+        "コードベース全体",
+        "リポジトリ全体",
+        "最新",
+        "ドキュメント",
+        "ライブラリ",
+        "パッケージ",
     ],
     "en": [
-        "research", "investigate", "look up", "find out",
-        "pdf", "video", "audio", "image",
-        "entire codebase", "whole repository",
-        "latest", "documentation", "docs",
-        "library", "package", "framework",
+        "research",
+        "investigate",
+        "look up",
+        "find out",
+        "pdf",
+        "video",
+        "audio",
+        "image",
+        "entire codebase",
+        "whole repository",
+        "latest",
+        "documentation",
+        "docs",
+        "library",
+        "package",
+        "framework",
     ],
 }
 
@@ -54,11 +99,11 @@ def detect_agent(prompt: str) -> tuple[str | None, str]:
     """Detect which agent should handle this prompt."""
     prompt_lower = prompt.lower()
 
-    # Check Codex triggers
-    for triggers in CODEX_TRIGGERS.values():
+    # Check OpenCode triggers
+    for triggers in OPENCODE_TRIGGERS.values():
         for trigger in triggers:
             if trigger in prompt_lower:
-                return "codex", trigger
+                return "opencode", trigger
 
     # Check Gemini triggers
     for triggers in GEMINI_TRIGGERS.values():
@@ -80,16 +125,16 @@ def main():
 
         agent, trigger = detect_agent(prompt)
 
-        if agent == "codex":
+        if agent == "opencode":
             output = {
                 "hookSpecificOutput": {
                     "hookEventName": "UserPromptSubmit",
                     "additionalContext": (
                         f"[Agent Routing] Detected '{trigger}' - this task may benefit from "
-                        "Codex CLI's deep reasoning capabilities. Consider: "
-                        "`codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "
+                        "OpenCode CLI's deep reasoning capabilities. Consider: "
+                        "`opencode run -m github-copilot/gpt-5.4 "
                         '"{task description}"` for design decisions, debugging, or complex analysis.'
-                    )
+                    ),
                 }
             }
             print(json.dumps(output))
@@ -103,7 +148,7 @@ def main():
                         "Gemini CLI's research capabilities. Consider: "
                         '`gemini -p "Research: {topic}" 2>/dev/null` '
                         "for documentation, library research, or multimodal content."
-                    )
+                    ),
                 }
             }
             print(json.dumps(output))

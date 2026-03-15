@@ -84,12 +84,12 @@ Library docs: `.claude/docs/libraries/`
 | Agent | Strength | Use For |
 |-------|----------|---------|
 | **Claude Code** | 1M context, orchestration | Codebase analysis, implementation |
-| **Codex CLI** | Deep reasoning | Design decisions, debugging, trade-offs |
+| **OpenCode CLI** | Deep reasoning | Design decisions, debugging, trade-offs |
 | **Gemini CLI** | Google Search, multimodal | External research, PDF/video/audio |
 
 ### When to Use
 
-- **Design/debug** → Codex (`/codex-system`)
+- **Design/debug** → OpenCode (`/opencode-system`)
 - **External research** → Gemini (`/gemini-system`)
 - **Codebase analysis** → Gemini subagent (`gemini-explore`)
 
@@ -101,7 +101,7 @@ Library docs: `.claude/docs/libraries/`
 | Large (50+ lines) | Via subagent |
 | Reports | Subagent → save to `.claude/docs/` |
 
-→ `.claude/rules/codex-delegation.md`, `.claude/rules/gemini-delegation.md`, `.claude/rules/tool-routing.md`
+→ `.claude/rules/opencode-delegation.md`, `.claude/rules/gemini-delegation.md`, `.claude/rules/tool-routing.md`
 """,
     4: """\
 ## Workflow
@@ -181,36 +181,36 @@ PHASES: dict[int, dict] = {
     },
     3: {
         "name": "External CLI Integration",
-        "description": "Codex CLI + Gemini CLI skills (requires CLI installation)",
+        "description": "OpenCode CLI + Gemini CLI skills (requires CLI installation)",
         "files": [
-            ".claude/rules/codex-delegation.md",
+            ".claude/rules/opencode-delegation.md",
             ".claude/rules/gemini-delegation.md",
             ".claude/rules/tool-routing.md",
-            ".claude/skills/codex-system/SKILL.md",
-            ".claude/skills/codex-system/references/agent-prompts.md",
-            ".claude/skills/codex-system/references/code-review-task.md",
-            ".claude/skills/codex-system/references/delegation-patterns.md",
-            ".claude/skills/codex-system/references/refactoring-task.md",
-            ".claude/skills/codex-system/references/troubleshooting.md",
+            ".claude/skills/opencode-system/SKILL.md",
+            ".claude/skills/opencode-system/references/agent-prompts.md",
+            ".claude/skills/opencode-system/references/code-review-task.md",
+            ".claude/skills/opencode-system/references/delegation-patterns.md",
+            ".claude/skills/opencode-system/references/refactoring-task.md",
+            ".claude/skills/opencode-system/references/troubleshooting.md",
             ".claude/skills/gemini-system/SKILL.md",
             ".claude/skills/gemini-system/references/lib-research-task.md",
             ".claude/skills/gemini-system/references/use-cases.md",
             ".claude/hooks/agent-router.py",
-            ".claude/hooks/check-codex-before-write.py",
-            ".claude/hooks/check-codex-after-plan.py",
-            ".claude/hooks/error-to-codex.py",
+            ".claude/hooks/check-opencode-before-write.py",
+            ".claude/hooks/check-opencode-after-plan.py",
+            ".claude/hooks/error-to-opencode.py",
             ".claude/hooks/enforce-tool-routing.py",
             ".claude/hooks/suggest-gemini-research.py",
             ".claude/hooks/log-cli-tools.py",
             ".claude/hooks/post-test-analysis.py",
             ".claude/hooks/post-implementation-review.py",
             ".claude/agents/general-purpose.md",
-            ".claude/agents/codex-debugger.md",
+            ".claude/agents/opencode-debugger.md",
             ".claude/agents/gemini-explore.md",
         ],
         "dirs": [".claude/docs/research/"],
         "settings_permissions": [
-            "Bash(codex:*)",
+            "Bash(opencode:*)",
             "Bash(gemini:*)",
         ],
         "settings_hooks": [
@@ -223,7 +223,7 @@ PHASES: dict[int, dict] = {
             {
                 "event": "PreToolUse",
                 "matcher": "Edit|Write",
-                "command": 'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/check-codex-before-write.py"',
+                "command": 'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/check-opencode-before-write.py"',
                 "timeout": 10,
             },
             {
@@ -241,13 +241,13 @@ PHASES: dict[int, dict] = {
             {
                 "event": "PostToolUse",
                 "matcher": "Task",
-                "command": 'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/check-codex-after-plan.py"',
+                "command": 'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/check-opencode-after-plan.py"',
                 "timeout": 10,
             },
             {
                 "event": "PostToolUse",
                 "matcher": "Bash",
-                "command": 'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/error-to-codex.py"',
+                "command": 'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/error-to-opencode.py"',
                 "timeout": 10,
             },
             {
@@ -902,7 +902,9 @@ def main() -> int:
     # Phase selection
     if args.phase is not None:
         try:
-            phases = sorted({int(p.strip()) for p in args.phase.split(",") if p.strip()})
+            phases = sorted(
+                {int(p.strip()) for p in args.phase.split(",") if p.strip()}
+            )
         except ValueError:
             print("Error: --phase must be comma-separated integers (e.g. '0,1,2')")
             return 1

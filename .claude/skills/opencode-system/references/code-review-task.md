@@ -1,6 +1,6 @@
-# Code Review Task for Codex
+# Code Review Task for OpenCode
 
-When delegating code review to Codex, use this prompt template.
+When delegating code review to OpenCode, use this prompt template.
 
 ## Prompt Template
 
@@ -52,23 +52,23 @@ Review Checklist:
 
 Provide feedback in this format:
 
-### 🔴 Critical (Must Fix)
+### Red Critical (Must Fix)
 Security issues, bugs, library misuse
 
-### 🟡 Warning (Should Fix)
+### Yellow Warning (Should Fix)
 Lack of simplicity, best practice violations
 
-### 🟢 Suggestion (Consider)
+### Green Suggestion (Consider)
 Better approach proposals
 
-### ✅ Good
+### Check Good
 Well-implemented points
 ```
 
 ## Example Invocation
 
 ```bash
-codex exec --model gpt-5.3-codex --sandbox read-only --full-auto "
+opencode run -m github-copilot/gpt-5.4 "
 Review this code change:
 
 ## Changes

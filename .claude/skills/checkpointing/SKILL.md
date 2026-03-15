@@ -20,7 +20,7 @@ metadata:
 ┌─────────────────────────────────────────────────────────────┐
 │  1. Collect Everything                                       │
 │     ├── git log (commits, file changes, line stats)          │
-│     ├── CLI logs (Codex/Gemini consultations)                │
+│     ├── CLI logs (OpenCode/Gemini consultations)              │
 │     ├── Agent Teams activity (tasks, teammates, messages)    │
 │     └── Design decisions (.claude/docs/DESIGN.md changes)    │
 │                                                              │
@@ -57,7 +57,7 @@ metadata:
 
 ### CLI Consultations
 
-- Codex consultations (prompt, success/failure)
+- OpenCode consultations (prompt, success/failure)
 - Gemini researches (prompt, success/failure)
 
 ### Agent Teams Activity
@@ -81,7 +81,7 @@ metadata:
 ## Summary
 - **Commits**: 12
 - **Files changed**: 15 (10 modified, 4 created, 1 deleted)
-- **Codex consultations**: 3
+- **OpenCode consultations**: 3
 - **Gemini researches**: 2
 - **Agent Teams sessions**: 1 (3 teammates)
 - **Tasks completed**: 8/10
@@ -104,7 +104,7 @@ metadata:
 
 ## CLI Consultations
 
-### Codex (3 consultations)
+### OpenCode (3 consultations)
 - ✓ Design: Architecture for Agent Teams integration
 - ✓ Debug: Task dependency resolution
 - ✗ Review: (timeout)
@@ -119,7 +119,7 @@ metadata:
 **Composition:**
 - Lead: Claude (orchestration)
 - Researcher: Gemini-powered (external research)
-- Architect: Codex-powered (design decisions)
+- Architect: OpenCode-powered (design decisions)
 
 **Task List:**
 - [x] Research library options (Researcher)
@@ -167,7 +167,7 @@ Each checkpoint also appends a concise summary to CLAUDE.md:
 
 ### 2026-02-08
 - 12 commits, 15 files changed
-- Codex: 3 consultations (design, debug, review)
+- OpenCode: 3 consultations (design, debug, review)
 - Gemini: 2 researches (agent teams, library comparison)
 - Agent Teams: 1 session (3 teammates, 8/10 tasks completed)
 - New skills: /team-implement, /team-review

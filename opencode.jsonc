@@ -1,5 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "model": "github-copilot/gpt-5.4",
   "mcp": {
     "linear": {
       "type": "local",
