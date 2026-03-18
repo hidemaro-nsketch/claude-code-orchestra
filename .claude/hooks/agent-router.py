@@ -125,6 +125,66 @@ TEAM_REVIEW_TRIGGERS = {
     ],
 }
 
+FS_OPS_TRIGGERS = {
+    "ja": [
+        "ディレクトリを作",
+        "フォルダを作",
+        "フォルダ作成",
+        "ディレクトリ作成",
+        "mkdir",
+        "ファイルを削除",
+        "ディレクトリを削除",
+        "フォルダを削除",
+        "ファイルを消して",
+        "ディレクトリを消して",
+        "フォルダを消して",
+        "rmして",
+        "rm -rf",
+        "ファイルを移動",
+        "ファイルを動かして",
+        "ディレクトリを移動",
+        "フォルダを移動",
+        "mvして",
+        "ファイルをコピー",
+        "コピーして",
+        "cpして",
+        "シンボリックリンク",
+        "リンクを作",
+        "パーミッション",
+        "権限を変",
+        "chmodして",
+        "touchして",
+        "ファイル整理",
+        "ディレクトリ構造",
+        "フォルダ構造",
+    ],
+    "en": [
+        "mkdir",
+        "make directory",
+        "create directory",
+        "create folder",
+        "rm ",
+        "rm -rf",
+        "remove file",
+        "remove directory",
+        "delete file",
+        "delete folder",
+        "delete directory",
+        "move file",
+        "move directory",
+        "mv ",
+        "copy file",
+        "copy directory",
+        "cp ",
+        "symlink",
+        "symbolic link",
+        "chmod",
+        "touch ",
+        "restructure",
+        "reorganize files",
+    ],
+}
+
 DEPLOY_TRIGGERS = {
     "ja": [
         "デプロイ",
@@ -308,7 +368,7 @@ LIGHTWEIGHT_OPERATION_PATTERNS = {
 
 # Explicit skill command pattern (user already typed the skill name)
 EXPLICIT_SKILL_RE = re.compile(
-    r"^/(?:startproject|team-implement|team-review|deploy)\b", re.IGNORECASE
+    r"^/(?:startproject|team-implement|team-review|deploy|fs-ops)\b", re.IGNORECASE
 )
 
 
@@ -360,6 +420,7 @@ def detect_skill_intent(prompt: str) -> tuple[str | None, str]:
         ("startproject", STARTPROJECT_TRIGGERS),
         ("team-implement", TEAM_IMPLEMENT_TRIGGERS),
         ("team-review", TEAM_REVIEW_TRIGGERS),
+        ("fs-ops", FS_OPS_TRIGGERS),
         ("deploy", DEPLOY_TRIGGERS),
     ]
 
@@ -412,6 +473,13 @@ SKILL_DESCRIPTIONS = {
         "This looks like a request to review implemented code. "
         "Use `/team-review` skill for parallel code review with specialized reviewers. "
         "Run: /team-review"
+    ),
+    "fs-ops": (
+        "[Skill Routing] Detected filesystem operation intent (trigger: '{trigger}'). "
+        "This looks like a filesystem operation request (mkdir, rm, cp, mv, etc.). "
+        "Use `/fs-ops` skill which performs impact analysis before executing "
+        "and runs in a context-isolated fork. "
+        "Run: /fs-ops {prompt_summary}"
     ),
     "deploy": (
         "[Skill Routing] Detected git/deploy intent (trigger: '{trigger}'). "

@@ -38,22 +38,81 @@ metadata:
 
 **ユーザーが指定した git 操作を `context: fork` の分離コンテキストで直接実行する。**
 
+### 操作タイプの分類
+
+Ad-hoc Git 操作は **Push-type（書き込み）** と **Pull-type（読み取り）** に分類される：
+
+| 分類 | コマンド | 特徴 |
+|------|---------|------|
+| **Push-type（書き込み）** | `git add`, `git commit`, `git push`, `git merge`, `git rebase`, `git cherry-pick`, `git tag`（作成）, `git stash pop/apply`, `git reset`, `git revert` | リポジトリの状態を変更する |
+| **Pull-type（読み取り）** | `git log`, `git diff`, `git show`, `git blame`, `git status`, `git branch`（一覧）, `git pull`, `git fetch`, `git stash list/show` | リポジトリの状態を読み取るのみ |
+
+### モード判定ロジック（Ad-hoc Git 内）
+
+```
+1. ユーザーの要求を分析
+2. 操作タイプを判定:
+   2a. Pull-type → そのまま実行（ブランチ制限なし）
+   2b. Push-type + main/master 以外のブランチ → そのまま実行
+   2c. Push-type + main/master 上 → feature ブランチを自動作成してから実行
+3. 不明 → ユーザーに確認
+```
+
+### main ブランチ保護（Push-type 操作）
+
+**Push-type 操作で main/master ブランチ上にいる場合、直接の変更を防止する。**
+
+```
+手順:
+1. git branch --show-current で現在のブランチを確認
+2. main または master の場合:
+   a. ユーザーに通知「main 上なので feature ブランチを作成します」
+   b. 自動ブランチ名フォーマットに従いブランチを作成
+   c. 元の操作を実行
+3. 確認ダイアログは出さない（フロー優先）
+4. ユーザーがブランチ名を指定していればそれを使う
+```
+
+#### 自動ブランチ名フォーマット
+
+ユーザーがブランチ名を指定しない場合、以下のフォーマットで自動生成する:
+
+```
+feature/{operation}-{YYYYMMDD}
+```
+
+- **{operation}**: 操作内容をケバブケースで要約（2-4 単語、英語）
+- **{YYYYMMDD}**: 操作日（`date +%Y%m%d` で取得）
+
+**例**:
+- `feature/fix-typo-20260318`
+- `feature/add-validation-20260318`
+- `feature/update-config-20260318`
+
+> **Note**: Pull-type 操作（git log, git diff 等）は main 上でも制限なく実行できる。
+
 ### 対応する操作
 
-| 操作カテゴリ | コマンド例 |
-|-------------|-----------|
-| **コミット** | `git add`, `git commit` |
-| **ブランチ** | `git branch`, `git checkout`, `git switch`, `git merge` |
-| **履歴参照** | `git log`, `git diff`, `git show`, `git blame` |
-| **リモート** | `git push`, `git pull`, `git fetch` |
-| **その他** | `git stash`, `git rebase`, `git cherry-pick`, `git tag` |
+| 操作カテゴリ | コマンド例 | タイプ |
+|-------------|-----------|--------|
+| **コミット** | `git add`, `git commit` | Push-type |
+| **ブランチ作成・切替** | `git checkout -b`, `git switch -c` | Push-type |
+| **ブランチ一覧** | `git branch`, `git branch -a` | Pull-type |
+| **マージ** | `git merge` | Push-type |
+| **履歴参照** | `git log`, `git diff`, `git show`, `git blame` | Pull-type |
+| **リモート取得** | `git pull`, `git fetch` | Pull-type |
+| **リモート送信** | `git push` | Push-type |
+| **その他（書込）** | `git stash pop/apply`, `git rebase`, `git cherry-pick`, `git tag`（作成）, `git reset`, `git revert` | Push-type |
+| **その他（読取）** | `git stash list/show` | Pull-type |
 
 ### 実行手順
 
 1. ユーザーの要求を解釈し、必要な git コマンドを特定する
-2. 実行前に現在のブランチ・状態を `git status` と `git branch --show-current` で確認
-3. git コマンドを実行する
-4. 結果を日本語で簡潔に報告する
+2. 操作タイプ（Push-type / Pull-type）を判定する
+3. 実行前に現在のブランチ・状態を `git status` と `git branch --show-current` で確認
+4. **Push-type + main/master の場合**: feature ブランチを自動作成（上記「main ブランチ保護」参照）
+5. git コマンドを実行する
+6. 結果を日本語で簡潔に報告する
 
 ### 注意事項
 
@@ -270,6 +329,27 @@ Linear コメント投稿後、タスクのステータスを "In Review" に変
 
 ---
 
+## Don't-Ask Mode
+
+**don't-ask モード（`--dangerously-skip-permissions` / `mode: dontAsk` / `mode: auto`）で実行中の場合、ユーザー確認ステップをスキップし、自動的に次のフェーズに進む。**
+
+| 確認ポイント | 通常モード | Don't-Ask モード |
+|------------|-----------|-----------------|
+| Ad-hoc Git: 破壊的操作の確認 | ユーザーに確認してから実行 | **確認を維持（スキップしない）** -- 破壊的操作は常にユーザー確認必須 |
+| Step 1: 未コミット変更の確認 | ユーザーに確認 | 自動的にコミットして続行（変更内容に基づくメッセージで自動コミット） |
+| Step 3: PR 作成前の確認 | 通常は自動 | 変更なし（常に自動実行） |
+| Step 4: 元ブランチ不明時の確認 | ユーザーに確認 | `main` にフォールバック |
+| Linear タスクID 欠落時の確認 | ユーザーに ID 指定 or スキップを質問 | 自動的にスキップして続行 |
+| モード判定不明時の確認 | ユーザーに確認 | コンテキストから最も妥当なモードを自動選択 |
+
+### 重要な制約
+
+- **破壊的 git 操作（`git reset --hard`, `git push --force`, `git clean -f` 等）は don't-ask モードでもユーザー確認を省略しない**。データ損失リスクがあるため例外なし。
+- **記録ステップ（MUST）は don't-ask モードでもスキップしない**。ログ記録・Linear 投稿（IDがある場合）は常に実行する。
+- **品質チェック（Step 1）は don't-ask モードでもスキップしない**。
+
+---
+
 ## Tips
 
 - すべての git 操作は直接実行される（`context: fork` により分離されたコンテキストで実行）
@@ -279,3 +359,5 @@ Linear コメント投稿後、タスクのステータスを "In Review" に変
 - 元のブランチに戻れない場合は `git checkout main` にフォールバック
 - **Ad-hoc Git モード**: ユーザーの要求に応じて任意の git コマンドを実行できる。Linear 投稿等は不要
 - **モード判定**: PR作成 + push が明示されていれば Deploy Workflow、それ以外は Ad-hoc Git
+- **Push/Pull 分類**: Push-type 操作は main ブランチ保護の対象、Pull-type 操作は制限なし
+- **main 保護**: Push-type 操作で main 上にいる場合、自動的に feature ブランチを作成してから実行

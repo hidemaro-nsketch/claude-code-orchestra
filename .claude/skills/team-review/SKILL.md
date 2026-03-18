@@ -5,7 +5,7 @@ description: |
   (security, quality, test coverage) to review implementation from
   different perspectives simultaneously. Run after implementation.
 context: fork
-allowed-tools: Read, Write, Edit, Bash, Grep, Glob, Agent, AskUserQuestion, SendMessage, TaskCreate, TaskUpdate, TaskList, TaskGet, TodoWrite, ToolSearch
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob, Agent, Skill, AskUserQuestion, SendMessage, TaskCreate, TaskUpdate, TaskList, TaskGet, TodoWrite, ToolSearch, mcp__linear-server__save_comment, mcp__linear-server__get_issue, mcp__linear-server__save_issue, mcp__linear-server__list_issue_statuses
 metadata:
   short-description: Parallel review with Agent Teams
 ---
@@ -43,6 +43,7 @@ metadata:
 
 | 記録アクション | 発生箇所 | XS | S | M | L |
 |---------------|---------|:--:|:--:|:--:|:--:|
+| Linear ステータスを "In Progress" に変更 | Step 0 | — | MUST | MUST | MUST |
 | タスクファイルの Decision Log セクション POST エントリ（レビュー結果） | Step 4 | — | MUST | MUST | MUST |
 | タスクファイルの Fix Tasks セクション保存（修正タスク） | Step 5 | — | 該当時 | 該当時 | 該当時 |
 | タスクファイルの Decision Log セクション DECISION エントリ（Simplify結果） | Step 6 | — | 該当時 | 該当時 | 該当時 |
@@ -50,6 +51,9 @@ metadata:
 ## Workflow (Full — Tier L)
 
 ```
+Step 0: Linear Status Update
+  0-1. [MUST] Linear タスクのステータスを "In Progress" に変更
+    ↓
 Step 1: Gather Diff
   実装範囲の変更差分を収集
     ↓
@@ -75,6 +79,25 @@ Step 6: Simplify (Optional)
 Step 7: Auto-Continue to Deploy
   7-1. /deploy を自動起動
 ```
+
+---
+
+## Step 0: Linear Status Update
+
+**レビュー開始時に Linear タスクのステータスを "In Progress" に変更する。**
+
+### 0-1. [MUST] Linear タスクのステータスを "In Progress" に変更
+
+**このサブステップは S/M/L tier で必須。スキップ不可。**
+
+レビューフェーズ開始時に、Linear タスクのステータスを "In Progress" に変更する：
+
+```
+手順 1: list_issue_statuses でチームのステータス一覧を取得し、"In Progress" の stateId を特定
+手順 2: save_issue でタスクのステータスを "In Progress" に更新
+```
+
+> **Linear タスクIDが無い場合**: ユーザーに「Linear タスクIDが見つかりません。IDを指定しますか？スキップしますか？」と確認する。暗黙的にスキップしてはならない。
 
 ---
 
@@ -485,6 +508,33 @@ Step 5（Auto-Fix Loop）と Step 6（Simplify）の完了後：
 ```
 
 **重要**: ユーザーに「デプロイしますか？」と質問せず、自動的に `/deploy` を起動すること。`team-implement → team-review` と同様の自動発火パターンに従う。
+
+---
+
+## Don't-Ask Mode
+
+**don't-ask モード（`--dangerously-skip-permissions` / `mode: dontAsk` / `mode: auto`）で実行中の場合、ユーザー確認ステップをスキップし、自動的に次のフェーズに進む。**
+
+| 確認ポイント | 通常モード | Don't-Ask モード |
+|------------|-----------|-----------------|
+| Step 6: Simplify 対象の承認 | ユーザーに番号指定 or 全承認を質問 | Effort: Small かつ Risk: Low の対象のみ自動承認、それ以外はスキップ |
+| Step 5: 自動修正ループの報告 | 修正ラウンド開始を報告 | 報告を出力するが確認を待たず自動続行 |
+| Step 7: `/deploy` 自動起動 | 通常でも自動発火 | 変更なし（常に自動発火） |
+| Linear タスクID 欠落時の確認 | ユーザーに ID 指定 or スキップを質問 | 自動的にスキップして続行 |
+
+### Simplify 自動承認の基準
+
+Don't-ask モードでは、以下の条件を**すべて**満たす Simplify 対象のみ自動承認する:
+
+- **Effort**: Small（小規模な変更のみ）
+- **Risk**: Low（動作変更リスクが低いもののみ）
+
+Medium/Large の Effort や Medium の Risk を持つ対象はスキップし、ログに記録する。
+
+### 重要な制約
+
+- **記録ステップ（MUST）は don't-ask モードでもスキップしない**。ログ記録・ファイル保存は常に実行する。
+- **自動修正ループ（Step 5）は don't-ask モードでも最大 2 ラウンドの制限を遵守する**。
 
 ---
 

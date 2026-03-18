@@ -3,7 +3,9 @@
     "name": "gemini-3-pro-preview"
   },
   "context": {
-    "fileName": ["GEMINI.md", "AGENTS.md"],
+    "fileName": [
+      "GEMINI.md"
+    ],
     "discoveryMaxDirs": 200,
     "fileFiltering": {
       "respectGitIgnore": true,
@@ -11,14 +13,29 @@
     }
   },
   "tools": {
-    "sandbox": false,
-    "autoAccept": false
+    "sandbox": true,
+    "autoAccept": true
   },
   "experimental": {
     "skills": true,
     "enableAgents": true
   },
-  "skills": {
-    "disabled": []
+  "security": {
+    "auth": {
+      "selectedType": "oauth-personal"
+    }
+  },
+  "general": {
+    "previewFeatures": true,
+    "vimMode": true,
+    "sessionRetention": {
+      "warningAcknowledged": true,
+      "enabled": true,
+      "maxAge": "30d"
+    }
+  },
+  "ui": {
+    "showStatusInTitle": true,
+    "showMemoryUsage": true
   }
 }

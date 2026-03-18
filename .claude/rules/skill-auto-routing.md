@@ -47,6 +47,11 @@ The hook runs on every `UserPromptSubmit` event and follows this priority:
 - Quality or security check requests
 - Keywords: "review", "check", "quality", "security review"
 
+### /fs-ops
+- Filesystem operations (mkdir, rm, cp, mv, chmod, ln, touch)
+- Directory restructuring or file reorganization
+- Keywords: "mkdir", "rm", "delete", "remove", "move", "copy", "chmod", "touch", "create directory", "create folder", "restructure"
+
 ### /deploy
 - PR creation, push, or deployment requests
 - **All ad-hoc git operations** (commit, log, diff, branch, blame, stash, etc.)
@@ -62,6 +67,9 @@ The following are NOT routed to skills:
 
 > **Note**: Git operations ("commit", "push", "diff", etc.) are NOT excluded.
 > They are routed to `/deploy` skill (Ad-hoc Git mode) for context isolation.
+>
+> **Note**: Filesystem operations ("mkdir", "rm", "mv", etc.) are NOT excluded.
+> They are routed to `/fs-ops` skill for impact analysis and context isolation.
 
 ## Interaction with Existing Hooks
 
