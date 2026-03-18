@@ -588,6 +588,24 @@ Present the plan in Japanese:
 
 ---
 
+## Don't-Ask Mode
+
+**don't-ask モード（`--dangerously-skip-permissions` / `mode: dontAsk` / `mode: auto`）で実行中の場合、ユーザー確認ステップをスキップし、自動的に次のフェーズに進む。**
+
+| 確認ポイント | 通常モード | Don't-Ask モード |
+|------------|-----------|-----------------|
+| Phase 1 Step 2: Linear タスクID 確認 | ユーザーに Linear タスクIDを質問 | Linear タスクIDなしで続行（タイムスタンプ形式のファイル名を使用） |
+| Phase 1 Step 3: 要件ヒアリング | ユーザーに質問して要件を明確化 | 提供済みの情報から要件を推定して続行 |
+| Phase 3 Step 5: 計画承認待ち | 「この計画で進めてよろしいですか？」と質問 | 自動承認として処理し、`/team-implement` を自動起動 |
+| Linear タスクID 欠落時の確認 | ユーザーに ID 指定 or スキップを質問 | 自動的にスキップして続行 |
+
+### 重要な制約
+
+- **記録ステップ（MUST）は don't-ask モードでもスキップしない**。ログ記録・ファイル保存は常に実行する。
+- **Phase 2 の Agent Teams / OpenCode 相談**は通常通り実行する（ユーザー確認ではなく自動処理のため）。
+
+---
+
 ## Tips
 
 - **Step 0**: タスクサイズ (XS/S/M/L) を判定し、ワークフローを適応させる（`.claude/rules/adaptive-execution.md`）

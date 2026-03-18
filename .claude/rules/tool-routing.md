@@ -27,6 +27,7 @@ by providing cross-cutting routing decisions.
 | `/startproject` | 「新機能を作りたい」「issue #Nを進めたい」「計画して」 |
 | `/team-implement` | 「実装して」「承認します」「この計画で進めて」 |
 | `/team-review` | 「レビューして」「品質チェック」「実装完了」 |
+| `/fs-ops` | 「ディレクトリを作って」「ファイルを削除して」「移動して」 |
 | `/deploy` | 「PRを作って」「pushして」「デプロイ」 |
 
 ### 発火しないケース
@@ -43,7 +44,8 @@ by providing cross-cutting routing decisions.
 | スキル | 直接実行する操作 |
 |--------|----------------|
 | `/team-implement` | git checkout/branch、ruff、pytest、uv、Linear MCP |
-| `/team-review` | git diff/log、pytest、ruff |
+| `/team-review` | git diff/log、pytest、ruff、Linear MCP |
+| `/fs-ops` | mkdir、rm、cp、mv、chmod、ln、touch |
 | `/deploy` | git push、gh pr create、git checkout、Linear MCP |
 
 ## Adaptive Execution Override
@@ -122,6 +124,19 @@ Task tool parameters:
 - **Deploy Workflow モード**: PR 作成 + push + Linear 投稿（従来の deploy フロー）
 - **Ad-hoc Git モード**: 単発の git 操作（commit, log, diff, branch 等）
 
+### Push/Pull 分類（Ad-hoc Git モード）
+
+Ad-hoc Git モードでは、操作を **Push-type（書き込み）** と **Pull-type（読み取り）** に分類する：
+
+| 分類 | コマンド | 特徴 |
+|------|---------|------|
+| **Push-type（書き込み）** | `git add`, `git commit`, `git push`, `git merge`, `git rebase`, `git cherry-pick`, `git tag`（作成）, `git stash pop/apply`, `git reset`, `git revert` | リポジトリの状態を変更する |
+| **Pull-type（読み取り）** | `git log`, `git diff`, `git show`, `git blame`, `git status`, `git branch`（一覧）, `git pull`, `git fetch`, `git stash list/show` | リポジトリの状態を読み取るのみ |
+
+**main ブランチ保護**: Push-type 操作で main/master 上にいる場合、feature ブランチを自動作成してから実行する。Pull-type 操作にはブランチ制限なし。
+
+→ 詳細: `.claude/skills/deploy/SKILL.md`
+
 ### `context: fork` スキル内
 
 `/team-implement`, `/team-review`, `/deploy` はスキル内で git コマンドを直接実行する。
@@ -140,13 +155,14 @@ Task tool parameters:
 
 #### `/deploy` スキル経由で実行する操作
 
-| 操作 | コマンド例 |
-|------|-----------|
-| コミット | `git add`, `git commit` |
-| ブランチ | `git branch`, `git checkout`, `git switch`, `git merge` |
-| 履歴参照 | `git log`, `git diff`, `git show`, `git blame` |
-| リモート | `git push`, `git pull`, `git fetch` |
-| その他 | `git stash`, `git rebase`, `git cherry-pick`, `git tag` |
+| 操作 | コマンド例 | タイプ |
+|------|-----------|--------|
+| コミット | `git add`, `git commit` | Push-type |
+| ブランチ | `git branch`, `git checkout`, `git switch`, `git merge` | Push-type |
+| 履歴参照 | `git log`, `git diff`, `git show`, `git blame` | Pull-type |
+| リモート送信 | `git push` | Push-type |
+| リモート取得 | `git pull`, `git fetch` | Pull-type |
+| その他 | `git stash`, `git rebase`, `git cherry-pick`, `git tag` | Push/Pull mixed |
 
 ### Git Triggers
 
@@ -157,11 +173,21 @@ Task tool parameters:
 | 「git log見せて」「差分を見せて」 | `/deploy` スキル経由で実行 |
 | 「履歴を調べて」「blame して」 | `/deploy` スキル経由で実行 |
 
+## Linear ステータス遷移
+
+**各スキルが Linear タスクのステータスを適切なタイミングで変更する。**
+
+| スキル | タイミング | ステータス変更 |
+|--------|----------|--------------|
+| `/team-implement` | Step 0（実装開始時） | → "In Progress" |
+| `/team-review` | Step 0（レビュー開始時） | → "In Progress" |
+| `/deploy` | Step 5-2（デプロイ完了後） | → "In Review" |
+
 ## GitHub / Linear MCP Operations
 
 ### `context: fork` スキル内
 
-`/team-implement` と `/deploy` はスキル内で git コマンドによる情報取得 + Linear MCP を直接実行する。
+`/team-implement`, `/team-review`, `/deploy` はスキル内で git コマンドによる情報取得 + Linear MCP を直接実行する。
 
 ### アドホック操作
 

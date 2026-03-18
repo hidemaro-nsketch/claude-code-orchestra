@@ -5,7 +5,7 @@ description: |
   each owning separate files to avoid conflicts. Uses shared task list with
   dependencies for autonomous coordination. Run after /startproject plan approval.
 context: fork
-allowed-tools: Read, Write, Edit, Bash, Grep, Glob, Agent, Skill, AskUserQuestion, SendMessage, TaskCreate, TaskUpdate, TaskList, TaskGet, TodoWrite, ToolSearch, mcp__linear-server__save_comment, mcp__linear-server__get_issue, mcp__linear-server__save_issue
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob, Agent, Skill, AskUserQuestion, SendMessage, TaskCreate, TaskUpdate, TaskList, TaskGet, TodoWrite, ToolSearch, mcp__linear-server__save_comment, mcp__linear-server__get_issue, mcp__linear-server__save_issue, mcp__linear-server__list_issue_statuses
 metadata:
   short-description: Parallel implementation with Agent Teams
 ---
@@ -46,6 +46,7 @@ metadata:
 | 記録アクション | 発生箇所 | XS | S | M | L |
 |---------------|---------|:--:|:--:|:--:|:--:|
 | DESIGN.md 記録（design-tracker） | Step 0 | MUST | MUST | MUST | MUST |
+| Linear ステータスを "In Progress" に変更 | Step 0 | MUST | MUST | MUST | MUST |
 | Linear に設計記録コメント | Step 0 | MUST | MUST | MUST | MUST |
 | タスクファイルの Decision Log に PRE エントリ | Step 0 | MUST | MUST | MUST | MUST |
 | ブランチ情報をログに記録 | Step 1 | — | MUST | MUST | MUST |
@@ -86,8 +87,9 @@ metadata:
 ```
 Step 0: Record Design Decisions
   0-1. /design-tracker で設計決定を DESIGN.md に記録
-  0-2. [MUST] Linear に設計記録コメントを投稿
-  0-3. [MUST] タスクファイルの Decision Log に PRE エントリ追記
+  0-2. [MUST] Linear タスクのステータスを "In Progress" に変更
+  0-3. [MUST] Linear に設計記録コメントを投稿
+  0-4. [MUST] タスクファイルの Decision Log に PRE エントリ追記
     ↓
 Step 1: Create Feature Branch
   1-1. feature/{name} ブランチを作成
@@ -140,7 +142,20 @@ Step 6: Auto-Continue to Review
 
 > この記録は実装完了後のレビュー（`/team-review`）でも参照される。
 
-### 0-2. [MUST] Linear に設計記録コメントを投稿
+### 0-2. [MUST] Linear タスクのステータスを "In Progress" に変更
+
+**このサブステップは全 tier で必須。スキップ不可。**
+
+実装フェーズ開始時に、Linear タスクのステータスを "In Progress" に変更する：
+
+```
+手順 1: list_issue_statuses でチームのステータス一覧を取得し、"In Progress" の stateId を特定
+手順 2: save_issue でタスクのステータスを "In Progress" に更新
+```
+
+> **Linear タスクIDが無い場合**: ユーザーに「Linear タスクIDが見つかりません。IDを指定しますか？スキップしますか？」と確認する。暗黙的にスキップしてはならない。
+
+### 0-3. [MUST] Linear に設計記録コメントを投稿
 
 **このサブステップは全 tier で必須。スキップ不可。**
 
@@ -171,7 +186,7 @@ Linear MCP ツールで、/startproject から引き継いだ Linear タスクID
 
 > **Linear タスクIDが無い場合**: ユーザーに「Linear タスクIDが見つかりません。IDを指定しますか？スキップしますか？」と確認する。暗黙的にスキップしてはならない。
 
-### 0-3. [MUST] ローカルログに PRE エントリを追記
+### 0-4. [MUST] ローカルログに PRE エントリを追記
 
 **このサブステップは全 tier で必須。スキップ不可。**
 
@@ -530,6 +545,23 @@ Step 5 の全サブステップ（5-1 ~ 5-4）が完了した後：
 ```
 
 **重要**: ユーザーに「レビューしますか？」と質問せず、自動的に `/team-review` を起動すること。`startproject → team-implement` と同様の自動発火パターンに従う。
+
+---
+
+## Don't-Ask Mode
+
+**don't-ask モード（`--dangerously-skip-permissions` / `mode: dontAsk` / `mode: auto`）で実行中の場合、ユーザー確認ステップをスキップし、自動的に次のフェーズに進む。**
+
+| 確認ポイント | 通常モード | Don't-Ask モード |
+|------------|-----------|-----------------|
+| Linear タスクID 欠落時の確認 | ユーザーに ID 指定 or スキップを質問 | 自動的にスキップして続行 |
+| Step 5: Integration Report 提示 | ユーザーにレポートを提示 | レポートを出力するが確認を待たず自動続行 |
+| Step 6: `/team-review` 自動起動 | 通常でも自動発火 | 変更なし（常に自動発火） |
+
+### 重要な制約
+
+- **記録ステップ（MUST）は don't-ask モードでもスキップしない**。ログ記録・ファイル保存・Linear 投稿（IDがある場合）は常に実行する。
+- **品質チェック（Step 5-1）は don't-ask モードでもスキップしない**。ruff / pytest / ty チェックは常に実行する。
 
 ---
 
